@@ -20,7 +20,7 @@ export default function ConnectWalletBtn() {
 
         return (
           <div
-            className="h-full"
+            className="h-full border"
             {...(!ready && {
               "aria-hidden": true,
               style: {
