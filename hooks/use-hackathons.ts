@@ -1,3 +1,5 @@
+'use client'
+
 import { useEffect } from 'react';
 import { useHackathonStore } from '@/stores/hackathon-store';
 
