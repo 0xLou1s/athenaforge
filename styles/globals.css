@@ -151,7 +151,6 @@
   }
 }
 
-
 ::-moz-selection {
   color: var(--background);
   background: var(--foreground);

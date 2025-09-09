@@ -4,6 +4,8 @@ import "@/styles/globals.css";
 import { cn } from "@/lib/utils";
 import { siteConfig } from "@/config/site-config";
 import RootProviders from "@/providers";
+import AnnouncementBar from "@/components/announcement-bar";
+import Header from "@/components/layouts/header";
 
 const fontSans = Manrope({
   variable: "--font-sans",
@@ -48,7 +50,17 @@ export default function RootLayout({
           "[&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-gray-100 [&::-webkit-scrollbar-thumb]:bg-gray-300 dark:[&::-webkit-scrollbar-track]:bg-neutral-700 dark:[&::-webkit-scrollbar-thumb]:bg-neutral-500"
         )}
       >
-        <RootProviders>{children}</RootProviders>
+        <RootProviders>
+          <div className="w-full flex flex-col mb-2 gap-2 fixed top-0 left-0 right-0 z-50">
+            <div className="w-full max-w-[90rem] mx-auto px-2 lg:px-0">
+              <AnnouncementBar />
+              <Header />
+            </div>
+          </div>
+          <div className="relative flex-1 w-full max-w-[90rem] mx-auto px-2 lg:px-0 mt-24 border">
+            {children}
+          </div>
+        </RootProviders>
       </body>
     </html>
   );

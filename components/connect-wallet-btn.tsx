@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { usePrivy, useWallets } from "@privy-io/react-auth";
 import { useAccount, useBalance } from "wagmi";
+import { usePrivyAuth } from "@/hooks/use-privy-auth";
 import { PlugZap, Unplug } from "lucide-react";
 import {
   DropdownMenu,
@@ -24,13 +25,16 @@ export default function ConnectWalletBtn() {
   const { address, chain } = useAccount();
   const [copy, isCopied] = useCopyToClipboard();
 
+  // Use Zustand store for user state
+  const { user, isLoading: userLoading, error } = usePrivyAuth();
+
   const { data: balanceData } = useBalance({
     address: address,
   });
 
   const currentAccount = wallets?.[0];
 
-  if (!ready || (authenticated && !currentAccount)) {
+  if (!ready || userLoading || (authenticated && !currentAccount)) {
     return (
       <Button
         variant="ghost"

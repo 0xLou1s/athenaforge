@@ -9,7 +9,7 @@ export default function Header() {
   return (
     <div
       id="nav"
-      className="w-full h-14 flex items-center justify-end border divide-x"
+      className="w-full h-14 flex items-center justify-end border divide-x bg-background"
     >
       <div
         id="brand"
