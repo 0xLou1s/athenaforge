@@ -2,7 +2,7 @@
 
 import { QueryClientProvider } from "@tanstack/react-query";
 import { http } from "viem";
-import { rootstock, rootstockTestnet } from "viem/chains";
+import { kairos } from "viem/chains";
 import type { PrivyClientConfig } from "@privy-io/react-auth";
 import { PrivyProvider } from "@privy-io/react-auth";
 import { WagmiProvider, createConfig } from "@privy-io/wagmi";
@@ -10,10 +10,9 @@ import { queryClient } from "./wagmi-provider-config";
 import envConfig from "@/config/env-config";
 
 export const wagmiConfig = createConfig({
-  chains: [rootstock, rootstockTestnet],
+  chains: [kairos],
   transports: {
-    [rootstock.id]: http(),
-    [rootstockTestnet.id]: http(),
+    [kairos.id]: http("https://rpc.ankr.com/klaytn_testnet"),
   },
 });
 
@@ -28,8 +27,8 @@ const privyConfig: PrivyClientConfig = {
     loginMessage: "Please sign this message to confirm your identity",
     walletChainType: "ethereum-only",
   },
-  defaultChain: rootstockTestnet,
-  supportedChains: [rootstock, rootstockTestnet],
+  defaultChain: kairos,
+  supportedChains: [kairos],
 };
 
 export default function Providers({ children }: { children: React.ReactNode }) {
