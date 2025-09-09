@@ -1,3 +1,5 @@
+"use client";
+
 import TitleSection from "@/components/title-section";
 import { Button } from "@/components/ui/button";
 import { CardHover } from "@/components/ui/hover-card";
