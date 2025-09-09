@@ -1,5 +1,6 @@
 import TextHighlight from "@/components/text-highlight";
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
 import React from "react";
 
 export default function HeroSection() {
@@ -15,8 +16,8 @@ export default function HeroSection() {
         decentralized web.
       </p>
       <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-        <Button size="lg" className="px-8 w-fit ">
-          Browse Hackathons
+        <Button size="lg" className="px-8 w-fit " asChild>
+          <Link href="/hackathons">Browse Hackathons</Link>
         </Button>
         <Button
           variant="outline"

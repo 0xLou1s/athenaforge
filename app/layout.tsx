@@ -57,7 +57,7 @@ export default function RootLayout({
               <Header />
             </div>
           </div>
-          <div className="relative flex-1 w-full max-w-[90rem] mx-auto px-2 lg:px-0 pt-20">
+          <div className="relative flex-1 w-full max-w-[90rem] mx-auto px-2 lg:px-0 mt-24 border">
             {children}
           </div>
         </RootProviders>
