@@ -20,7 +20,7 @@ const privyConfig: PrivyClientConfig = {
   embeddedWallets: {
     createOnLogin: "users-without-wallets",
   },
-  loginMethods: ["wallet", "email"],
+  loginMethods: ["wallet", "email", "passkey"],
   appearance: {
     showWalletLoginFirst: false,
     accentColor: "#6A6FF5",
