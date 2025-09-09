@@ -1,7 +1,7 @@
 import { SiteConfig } from "@/types";
-import Github from "./icons/github";
-import X from "./icons/x";
-import Telegram from "./icons/telegram";
+import Github from "../components/icons/github";
+import X from "../components/icons/x";
+import Telegram from "../components/icons/telegram";
 
 export const siteConfig: SiteConfig = {
   name: "AthenaForge",

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Button } from "../ui/button";
 import { ArrowUpRight, PlugZap } from "lucide-react";
-import { siteConfig } from "@/config/site.config";
+import { siteConfig } from "@/config/site-config";
 import ThemeToggler from "../theme/toggler";
 import ConnectWalletBtn from "../connect-wallet-btn";
 

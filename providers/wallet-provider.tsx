@@ -1,62 +1,47 @@
 "use client";
 
-import * as React from "react";
-import {
-  RainbowKitProvider,
-  getDefaultWallets,
-  getDefaultConfig,
-  darkTheme,
-} from "@rainbow-me/rainbowkit";
-import { trustWallet, ledgerWallet } from "@rainbow-me/rainbowkit/wallets";
-import { kairos } from "wagmi/chains";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { WagmiProvider, http } from "wagmi";
-import "@rainbow-me/rainbowkit/styles.css";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { http } from "viem";
+import { kairos } from "viem/chains";
+import type { PrivyClientConfig } from "@privy-io/react-auth";
+import { PrivyProvider } from "@privy-io/react-auth";
+import { WagmiProvider, createConfig } from "@privy-io/wagmi";
+import { queryClient } from "./wagmi-provider-config";
+import envConfig from "@/config/env-config";
 
-const { wallets } = getDefaultWallets();
-
-const config = getDefaultConfig({
-  appName: "athenaforge",
-  projectId: "455a9939d641d79b258424737e7f9205",
-  wallets: [
-    ...wallets,
-    {
-      groupName: "Other",
-      wallets: [trustWallet, ledgerWallet],
-    },
-  ],
+export const wagmiConfig = createConfig({
   chains: [kairos],
   transports: {
     [kairos.id]: http("https://rpc.ankr.com/klaytn_testnet"),
   },
-  ssr: true,
 });
 
-const queryClient = new QueryClient();
+const privyConfig: PrivyClientConfig = {
+  embeddedWallets: {
+    createOnLogin: "users-without-wallets",
+  },
+  loginMethods: ["wallet", "email"],
+  appearance: {
+    showWalletLoginFirst: false,
+    accentColor: "#6A6FF5",
+    loginMessage: "Please sign this message to confirm your identity",
+    walletChainType: "ethereum-only",
+  },
+  defaultChain: kairos,
+  supportedChains: [kairos],
+};
 
-export function WalletProviders({ children }: { children: React.ReactNode }) {
-  const [mounted, setMounted] = React.useState(false);
-
-  React.useEffect(() => {
-    setMounted(true);
-  }, []);
-
+export default function Providers({ children }: { children: React.ReactNode }) {
   return (
-    <WagmiProvider config={config}>
+    <PrivyProvider
+      appId={envConfig.NEXT_PUBLIC_PRIVY_APP_ID}
+      config={privyConfig}
+    >
       <QueryClientProvider client={queryClient}>
-        <RainbowKitProvider
-          initialChain={kairos}
-          showRecentTransactions={true}
-          theme={darkTheme({
-            accentColor: "#3b82f6",
-            accentColorForeground: "white",
-            borderRadius: "none",
-          })}
-          locale="en-US"
-        >
-          {mounted && children}
-        </RainbowKitProvider>
+        <WagmiProvider config={wagmiConfig} reconnectOnMount={false}>
+          {children}
+        </WagmiProvider>
       </QueryClientProvider>
-    </WagmiProvider>
+    </PrivyProvider>
   );
 }
