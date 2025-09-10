@@ -34,7 +34,19 @@ export default function ConnectWalletBtn() {
 
   const currentAccount = wallets?.[0];
 
-  if (!ready || userLoading || (authenticated && !currentAccount)) {
+  if (!ready) {
+    return (
+      <Button
+        variant="ghost"
+        className={cn("size-14 aspect-square p-2 md:p-3")}
+        asChild
+      >
+        <Spinner size={12} variant="bars" />
+      </Button>
+    );
+  }
+
+  if (authenticated && !currentAccount) {
     return (
       <Button
         variant="ghost"
