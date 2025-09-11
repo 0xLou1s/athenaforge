@@ -40,9 +40,11 @@ import {
 } from "@/stores/hackathon-store";
 import { usePrivy } from "@privy-io/react-auth";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 // Form schemas
 const prizeSchema = z.object({
+  id: z.string().optional(),
   title: z.string().min(1, "Prize title is required"),
   description: z.string().min(1, "Prize description is required"),
   amount: z.number().min(0, "Amount must be positive"),
@@ -51,16 +53,19 @@ const prizeSchema = z.object({
 });
 
 const judgeSchema = z.object({
+  id: z.string().optional(),
   name: z.string().min(1, "Judge name is required"),
   title: z.string().min(1, "Judge title is required"),
   company: z.string().min(1, "Company is required"),
   bio: z.string().min(1, "Bio is required"),
+  avatar: z.string().optional(),
   twitter: z.string().optional(),
   linkedin: z.string().optional(),
   github: z.string().optional(),
 });
 
 const trackSchema = z.object({
+  id: z.string().optional(),
   name: z.string().min(1, "Track name is required"),
   description: z.string().min(1, "Track description is required"),
   criteria: z.array(z.string()).min(1, "At least one criteria is required"),
@@ -69,17 +74,16 @@ const trackSchema = z.object({
 const hackathonSchema = z.object({
   title: z.string().min(1, "Hackathon title is required"),
   description: z.string().min(10, "Description must be at least 10 characters"),
+  image: z.string().optional(),
   startDate: z.date(),
   endDate: z.date(),
   registrationDeadline: z.date(),
   maxParticipants: z.number().optional(),
-  requirements: z
-    .array(z.string())
-    .min(1, "At least one requirement is required"),
-  rules: z.array(z.string()).min(1, "At least one rule is required"),
+  requirements: z.array(z.string()).optional(),
+  rules: z.array(z.string()).optional(),
   prizes: z.array(prizeSchema).min(1, "At least one prize is required"),
-  judges: z.array(judgeSchema).min(1, "At least one judge is required"),
-  tracks: z.array(trackSchema).min(1, "At least one track is required"),
+  judges: z.array(judgeSchema).optional(),
+  tracks: z.array(trackSchema).optional(),
 });
 
 type HackathonFormData = z.infer<typeof hackathonSchema>;
@@ -145,14 +149,14 @@ function BasicInfoStep({ data, onNext, isFirst, isLast }: StepProps) {
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Basic Information</CardTitle>
-        <CardDescription>
+    <Card className="shadow-none border border-dashed">
+      <CardHeader className="space-y-1">
+        <CardTitle className="text-2xl">Basic Information</CardTitle>
+        <CardDescription className="text-base">
           Provide the essential details about your hackathon
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-6">
+      <CardContent className="space-y-8">
         <div className="space-y-2">
           <label className="text-sm font-medium">Hackathon Title</label>
           <Input
@@ -178,43 +182,57 @@ function BasicInfoStep({ data, onNext, isFirst, isLast }: StepProps) {
           )}
         </div>
 
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Hackathon Image</label>
-          <div className="flex items-center gap-4">
-            <div className="relative">
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleImageChange}
-                className="hidden"
-                id="image-upload"
-              />
-              <label
-                htmlFor="image-upload"
-                className="flex items-center gap-2 px-4 py-2 border border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-gray-400 transition-colors"
-              >
-                <Upload size={16} />
-                <span>Upload Image</span>
-              </label>
-            </div>
-            {imagePreview && (
-              <div className="relative">
-                <img
-                  src={imagePreview}
-                  alt="Preview"
-                  className="w-20 h-20 object-cover rounded-lg"
-                />
-                <button
-                  type="button"
-                  onClick={() => {
-                    setImageFile(null);
-                    setImagePreview("");
-                  }}
-                  className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-red-600"
+        <div className="space-y-4">
+          <label className="text-sm font-medium">
+            Hackathon Image (Optional)
+          </label>
+          <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center hover:border-muted-foreground/50 transition-colors">
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleImageChange}
+              className="hidden"
+              id="image-upload"
+            />
+            {imagePreview ? (
+              <div className="space-y-4">
+                <div className="relative inline-block">
+                  <img
+                    src={imagePreview}
+                    alt="Preview"
+                    className="w-32 h-32 object-cover rounded-lg mx-auto"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setImageFile(null);
+                      setImagePreview("");
+                    }}
+                    className="absolute -top-2 -right-2 w-8 h-8 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center hover:bg-destructive/90 transition-colors"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+                <label
+                  htmlFor="image-upload"
+                  className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium border border-input bg-background hover:bg-accent hover:text-accent-foreground rounded-md cursor-pointer transition-colors"
                 >
-                  <X size={12} />
-                </button>
+                  <ImageIcon size={16} />
+                  Change Image
+                </label>
               </div>
+            ) : (
+              <label htmlFor="image-upload" className="cursor-pointer block">
+                <div className="mx-auto w-12 h-12 text-muted-foreground mb-4">
+                  <ImageIcon size={48} />
+                </div>
+                <div className="text-sm text-muted-foreground mb-2">
+                  Click to upload hackathon image
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  PNG, JPG, GIF up to 10MB
+                </div>
+              </label>
             )}
           </div>
         </div>
@@ -332,7 +350,12 @@ function BasicInfoStep({ data, onNext, isFirst, isLast }: StepProps) {
 
 // Step 2: Prizes
 function PrizesStep({ data, onNext, onPrev, isFirst, isLast }: StepProps) {
-  const [prizes, setPrizes] = useState<Prize[]>(data.prizes || []);
+  const [prizes, setPrizes] = useState<Prize[]>(
+    (data.prizes || []).map((prize, index) => ({
+      ...prize,
+      id: prize.id || `prize-${index}`,
+    }))
+  );
   const [newPrize, setNewPrize] = useState<Partial<Prize>>({
     title: "",
     description: "",
@@ -380,12 +403,14 @@ function PrizesStep({ data, onNext, onPrev, isFirst, isLast }: StepProps) {
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Prizes</CardTitle>
-        <CardDescription>Define the prizes for your hackathon</CardDescription>
+    <Card className="shadow-none border-0">
+      <CardHeader className="space-y-1">
+        <CardTitle className="text-2xl">Prizes</CardTitle>
+        <CardDescription className="text-base">
+          Define the prizes for your hackathon
+        </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-6">
+      <CardContent className="space-y-8">
         <div className="space-y-4">
           {prizes.map((prize) => (
             <div key={prize.id} className="p-4 border rounded-lg">
@@ -476,18 +501,146 @@ function PrizesStep({ data, onNext, onPrev, isFirst, isLast }: StepProps) {
   );
 }
 
+// Step 3: Requirements & Rules
+function RequirementsStep({
+  data,
+  onNext,
+  onPrev,
+  isFirst,
+  isLast,
+}: StepProps) {
+  const [requirements, setRequirements] = useState<string[]>(
+    data.requirements || []
+  );
+  const [rules, setRules] = useState<string[]>(data.rules || []);
+  const [newRequirement, setNewRequirement] = useState("");
+  const [newRule, setNewRule] = useState("");
+
+  const addRequirement = () => {
+    if (newRequirement.trim()) {
+      setRequirements([...requirements, newRequirement.trim()]);
+      setNewRequirement("");
+    }
+  };
+
+  const removeRequirement = (index: number) => {
+    setRequirements(requirements.filter((_, i) => i !== index));
+  };
+
+  const addRule = () => {
+    if (newRule.trim()) {
+      setRules([...rules, newRule.trim()]);
+      setNewRule("");
+    }
+  };
+
+  const removeRule = (index: number) => {
+    setRules(rules.filter((_, i) => i !== index));
+  };
+
+  const handleNext = () => {
+    onNext({ ...data, requirements, rules });
+  };
+
+  return (
+    <Card className="shadow-lg border-0">
+      <CardHeader className="space-y-1">
+        <CardTitle className="text-2xl">Requirements & Rules</CardTitle>
+        <CardDescription className="text-base">
+          Define the requirements and rules for your hackathon (optional)
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-8">
+        {/* Requirements Section */}
+        <div className="space-y-4">
+          <h4 className="font-medium">Requirements</h4>
+          <div className="space-y-2">
+            {requirements.map((requirement, index) => (
+              <div
+                key={index}
+                className="flex items-center gap-2 p-2 border rounded"
+              >
+                <span className="flex-1">{requirement}</span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => removeRequirement(index)}
+                >
+                  <X size={16} />
+                </Button>
+              </div>
+            ))}
+          </div>
+          <div className="flex gap-2">
+            <Input
+              placeholder="Add a requirement"
+              value={newRequirement}
+              onChange={(e) => setNewRequirement(e.target.value)}
+              onKeyPress={(e) => e.key === "Enter" && addRequirement()}
+            />
+            <Button onClick={addRequirement}>
+              <Plus size={16} />
+            </Button>
+          </div>
+        </div>
+
+        {/* Rules Section */}
+        <div className="space-y-4">
+          <h4 className="font-medium">Rules</h4>
+          <div className="space-y-2">
+            {rules.map((rule, index) => (
+              <div
+                key={index}
+                className="flex items-center gap-2 p-2 border rounded"
+              >
+                <span className="flex-1">{rule}</span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => removeRule(index)}
+                >
+                  <X size={16} />
+                </Button>
+              </div>
+            ))}
+          </div>
+          <div className="flex gap-2">
+            <Input
+              placeholder="Add a rule"
+              value={newRule}
+              onChange={(e) => setNewRule(e.target.value)}
+              onKeyPress={(e) => e.key === "Enter" && addRule()}
+            />
+            <Button onClick={addRule}>
+              <Plus size={16} />
+            </Button>
+          </div>
+        </div>
+
+        <div className="flex justify-between">
+          <Button variant="outline" onClick={onPrev}>
+            Previous
+          </Button>
+          <Button onClick={handleNext}>Create Hackathon</Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 // Main Hackathon Form Component
 export default function HackathonForm() {
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<Partial<HackathonFormData>>({});
-  const { addHackathon, setLoading } = useHackathonStore();
+  const { setLoading, fetchHackathonsFromIPFS } = useHackathonStore();
   const { uploadJSON } = useIPFS();
   const { user } = usePrivy();
+  const router = useRouter();
 
   const steps = [
     { title: "Basic Info", component: BasicInfoStep },
     { title: "Prizes", component: PrizesStep },
-    // Add more steps here for judges, tracks, etc.
+    { title: "Requirements & Rules", component: RequirementsStep },
   ];
 
   const handleNext = (data: Partial<HackathonFormData>) => {
@@ -541,23 +694,43 @@ export default function HackathonForm() {
         status: "upcoming",
         participants: 0,
         maxParticipants: formData.maxParticipants,
-        prizes: formData.prizes!,
-        judges: formData.judges || [],
-        tracks: formData.tracks || [],
-        requirements: formData.requirements!,
-        rules: formData.rules!,
+        prizes: (formData.prizes || []).map((prize, index) => ({
+          ...prize,
+          id: prize.id || `prize-${index}`,
+        })),
+        judges: (formData.judges || []).map((judge, index) => ({
+          ...judge,
+          id: judge.id || `judge-${index}`,
+          avatar: judge.avatar || "",
+          socialLinks: {
+            twitter: judge.twitter || "",
+            linkedin: judge.linkedin || "",
+            github: judge.github || "",
+          },
+        })),
+        tracks: (formData.tracks || []).map((track, index) => ({
+          ...track,
+          id: track.id || `track-${index}`,
+        })),
+        requirements: formData.requirements || [],
+        rules: formData.rules || [],
         ipfsHash: uploadResult.cid,
         organizerId: user.id,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
 
-      addHackathon(hackathon);
       toast.success("Hackathon created successfully!");
+
+      // Refresh hackathons from IPFS
+      await fetchHackathonsFromIPFS();
 
       // Reset form
       setCurrentStep(1);
       setFormData({});
+
+      // Redirect to hackathons page
+      router.push("/hackathons");
     } catch (error) {
       toast.error("Failed to create hackathon");
     } finally {
@@ -568,12 +741,41 @@ export default function HackathonForm() {
   const CurrentStepComponent = steps[currentStep - 1]?.component;
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
+    <div className="max-w-5xl mx-auto p-6">
+      {/* Header with Progress */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">Create Hackathon</h1>
-        <p className="text-gray-600">
+        <p className="text-muted-foreground mb-6">
           Step {currentStep} of {steps.length}: {steps[currentStep - 1]?.title}
         </p>
+
+        {/* Progress Bar */}
+        <div className="w-full bg-muted rounded-full h-2 mb-6">
+          <div
+            className="bg-primary h-2 rounded-full transition-all duration-300 ease-in-out"
+            style={{ width: `${(currentStep / steps.length) * 100}%` }}
+          />
+        </div>
+
+        {/* Step Indicators */}
+        <div className="flex justify-between mb-8">
+          {steps.map((step, index) => (
+            <div key={index} className="flex flex-col items-center">
+              <div
+                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors ${
+                  index + 1 < currentStep
+                    ? "bg-primary text-primary-foreground"
+                    : index + 1 === currentStep
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted text-muted-foreground"
+                }`}
+              >
+                {index + 1}
+              </div>
+              <span className="text-xs mt-2 text-center">{step.title}</span>
+            </div>
+          ))}
+        </div>
       </div>
 
       {CurrentStepComponent && (

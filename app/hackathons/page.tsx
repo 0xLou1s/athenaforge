@@ -2,15 +2,6 @@
 
 import { useState } from "react";
 import { useHackathons } from "@/hooks/use-hackathons";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -21,9 +12,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
-import { Calendar, Users, Trophy, Search, Filter } from "lucide-react";
+import { Search, Filter } from "lucide-react";
 import Link from "next/link";
-import { format } from "date-fns";
+import HackathonCard from "@/components/hackathon-card";
 
 export default function HackathonsPage() {
   const {
@@ -36,51 +27,6 @@ export default function HackathonsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
 
-  const formatDateRange = (startDate: string, endDate: string) => {
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    return `${format(start, "MMM d")} - ${format(end, "MMM d, yyyy")}`;
-  };
-
-  const getStatusBadgeVariant = (status: string) => {
-    switch (status) {
-      case "upcoming":
-        return "secondary";
-      case "active":
-        return "default";
-      case "ended":
-        return "outline";
-      default:
-        return "outline";
-    }
-  };
-
-  const getButtonText = (status: string) => {
-    switch (status) {
-      case "upcoming":
-        return "Register Now";
-      case "active":
-        return "Join Now";
-      case "ended":
-        return "View Results";
-      default:
-        return "Learn More";
-    }
-  };
-
-  const getButtonVariant = (status: string) => {
-    switch (status) {
-      case "upcoming":
-        return "default";
-      case "active":
-        return "default";
-      case "ended":
-        return "outline";
-      default:
-        return "outline";
-    }
-  };
-
   // Filter hackathons based on search and status
   const filteredHackathons = hackathons.filter((hackathon) => {
     const matchesSearch =
@@ -89,7 +35,8 @@ export default function HackathonsPage() {
       hackathon.description.toLowerCase().includes(searchQuery.toLowerCase());
 
     const matchesStatus =
-      statusFilter === "all" || hackathon.status === statusFilter;
+      statusFilter === "all" ||
+      (hackathon.status || "upcoming") === statusFilter;
 
     return matchesSearch && matchesStatus;
   });
@@ -165,100 +112,7 @@ export default function HackathonsPage() {
           {filteredHackathons.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredHackathons.map((hackathon) => (
-                <Card
-                  key={hackathon.id}
-                  className="overflow-hidden hover:shadow-lg transition-shadow"
-                >
-                  <div className="relative">
-                    <img
-                      src={hackathon.image}
-                      alt={hackathon.title}
-                      className="w-full h-48 object-cover"
-                    />
-                    <Badge
-                      variant={getStatusBadgeVariant(hackathon.status)}
-                      className="absolute top-4 right-4"
-                    >
-                      {hackathon.status.charAt(0).toUpperCase() +
-                        hackathon.status.slice(1)}
-                    </Badge>
-                  </div>
-
-                  <CardHeader>
-                    <CardTitle className="line-clamp-2">
-                      {hackathon.title}
-                    </CardTitle>
-                    <CardDescription className="line-clamp-3">
-                      {hackathon.description}
-                    </CardDescription>
-                  </CardHeader>
-
-                  <CardContent className="space-y-4">
-                    {/* Date Range */}
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Calendar className="h-4 w-4" />
-                      <span>
-                        {formatDateRange(
-                          hackathon.startDate,
-                          hackathon.endDate
-                        )}
-                      </span>
-                    </div>
-
-                    {/* Participants */}
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Users className="h-4 w-4" />
-                      <span>
-                        {hackathon.participants} participants
-                        {hackathon.maxParticipants &&
-                          ` / ${hackathon.maxParticipants}`}
-                      </span>
-                    </div>
-
-                    {/* Prizes */}
-                    {hackathon.prizes.length > 0 && (
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Trophy className="h-4 w-4" />
-                        <span>
-                          {hackathon.prizes.length} prize
-                          {hackathon.prizes.length > 1 ? "s" : ""}
-                        </span>
-                      </div>
-                    )}
-
-                    {/* Tracks */}
-                    {hackathon.tracks.length > 0 && (
-                      <div className="flex flex-wrap gap-1">
-                        {hackathon.tracks.slice(0, 2).map((track) => (
-                          <Badge
-                            key={track.id}
-                            variant="outline"
-                            className="text-xs"
-                          >
-                            {track.name}
-                          </Badge>
-                        ))}
-                        {hackathon.tracks.length > 2 && (
-                          <Badge variant="outline" className="text-xs">
-                            +{hackathon.tracks.length - 2} more
-                          </Badge>
-                        )}
-                      </div>
-                    )}
-                  </CardContent>
-
-                  <CardFooter>
-                    <Button
-                      asChild
-                      className="w-full"
-                      variant={getButtonVariant(hackathon.status)}
-                    >
-                      <Link href={`/hackathons/${hackathon.id}`}>
-                        {getButtonText(hackathon.status)}
-                      </Link>
-                    </Button>
-                  </CardFooter>
-                </Card>
+                <HackathonCard key={hackathon.id} hackathon={hackathon} />
               ))}
             </div>
           ) : (
@@ -266,25 +120,33 @@ export default function HackathonsPage() {
               <div className="text-muted-foreground mb-4">
                 <Search className="h-12 w-12 mx-auto mb-4 opacity-50" />
                 <h3 className="text-lg font-semibold mb-2">
-                  No hackathons found
+                  {searchQuery || statusFilter !== "all"
+                    ? "No hackathons found"
+                    : "No hackathons yet"}
                 </h3>
-                <p className="text-sm">
+                <p className="text-sm mb-6">
                   {searchQuery || statusFilter !== "all"
                     ? "Try adjusting your search or filter criteria."
-                    : "No hackathons are currently available."}
+                    : "Be the first to create a hackathon and start building the future of decentralized development."}
                 </p>
+                {searchQuery || statusFilter !== "all" ? (
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setSearchQuery("");
+                      setStatusFilter("all");
+                    }}
+                  >
+                    Clear filters
+                  </Button>
+                ) : (
+                  <Button asChild>
+                    <Link href="/create-hackathon">
+                      Create Your First Hackathon
+                    </Link>
+                  </Button>
+                )}
               </div>
-              {(searchQuery || statusFilter !== "all") && (
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setSearchQuery("");
-                    setStatusFilter("all");
-                  }}
-                >
-                  Clear filters
-                </Button>
-              )}
             </div>
           )}
         </>

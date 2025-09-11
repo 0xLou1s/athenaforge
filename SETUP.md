@@ -12,6 +12,7 @@ NEXT_PUBLIC_PRIVY_APP_SECRET=your_privy_app_secret
 # Pinata Configuration
 NEXT_PUBLIC_PINATA_JWT=your_pinata_jwt_token
 NEXT_PUBLIC_PINATA_GATEWAY=your_pinata_gateway_domain.mypinata.cloud
+NEXT_PUBLIC_PINATA_GROUP_ID=your_pinata_group_id
 ```
 
 ## Pinata Setup
@@ -30,9 +31,17 @@ NEXT_PUBLIC_PINATA_GATEWAY=your_pinata_gateway_domain.mypinata.cloud
    - Create a new dedicated gateway
    - Copy the gateway domain (e.g., `your-domain.mypinata.cloud`)
 
-4. **Add to Environment**
+4. **Create Group (Optional but Recommended)**
+   - Go to Groups section in your dashboard
+   - Create a new group for organizing your files
+   - Copy the group ID (e.g., `b07bf940-6992-4817-aad5-81ca16eb37ea`)
+
+5. **Add to Environment**
    - Add the JWT token as `NEXT_PUBLIC_PINATA_JWT`
    - Add the gateway domain as `NEXT_PUBLIC_PINATA_GATEWAY`
+   - Add the group ID as `NEXT_PUBLIC_PINATA_GROUP_ID`
+
+**Note:** All environment variables use the `NEXT_PUBLIC_` prefix to make them available in the browser.
 
 ## Privy Setup
 

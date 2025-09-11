@@ -40,6 +40,7 @@ export async function POST(request: NextRequest) {
           ...parsedMetadata,
         },
       },
+      groupId: envConfig.NEXT_PUBLIC_PINATA_GROUP_ID,
     });
 
     const result = {

@@ -85,7 +85,8 @@ export default function ProjectForm({
     email: "",
   });
 
-  const { addProject, setLoading, hackathons } = useHackathonStore();
+  const { setLoading, hackathons, fetchHackathonsFromIPFS } =
+    useHackathonStore();
   const { uploadJSON } = useIPFS();
   const { user } = usePrivy();
 
@@ -170,8 +171,10 @@ export default function ProjectForm({
         submittedAt: new Date().toISOString(),
       };
 
-      addProject(project);
       toast.success("Project submitted successfully!");
+
+      // Refresh hackathons from IPFS to get updated project data
+      await fetchHackathonsFromIPFS();
 
       if (onSuccess) {
         onSuccess(project);
