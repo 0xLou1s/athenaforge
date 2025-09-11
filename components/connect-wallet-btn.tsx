@@ -3,7 +3,6 @@
 import { Button } from "@/components/ui/button";
 import { usePrivy, useWallets } from "@privy-io/react-auth";
 import { useAccount, useBalance } from "wagmi";
-import { usePrivyAuth } from "@/hooks/use-privy-auth";
 import { PlugZap, Unplug } from "lucide-react";
 import {
   DropdownMenu,
@@ -25,9 +24,6 @@ export default function ConnectWalletBtn() {
   const { address, chain } = useAccount();
   const [copy, isCopied] = useCopyToClipboard();
 
-  // Use Zustand store for user state
-  const { user, isLoading: userLoading, error } = usePrivyAuth();
-
   const { data: balanceData } = useBalance({
     address: address,
   });
@@ -35,18 +31,6 @@ export default function ConnectWalletBtn() {
   const currentAccount = wallets?.[0];
 
   if (!ready) {
-    return (
-      <Button
-        variant="ghost"
-        className={cn("size-14 aspect-square p-2 md:p-3")}
-        asChild
-      >
-        <Spinner size={12} variant="bars" />
-      </Button>
-    );
-  }
-
-  if (authenticated && !currentAccount) {
     return (
       <Button
         variant="ghost"
@@ -77,7 +61,7 @@ export default function ConnectWalletBtn() {
             </div>
           </div>
         </Button>
-      ) : (
+      ) : currentAccount ? (
         <DropdownMenu>
           <DropdownMenuTrigger className="h-full" asChild>
             <Button
@@ -145,6 +129,14 @@ export default function ConnectWalletBtn() {
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+      ) : (
+        <Button
+          variant="ghost"
+          className={cn("size-14 aspect-square p-2 md:p-3")}
+          asChild
+        >
+          <Spinner size={12} variant="bars" />
+        </Button>
       )}
     </div>
   );
