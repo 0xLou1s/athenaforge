@@ -170,14 +170,22 @@ export default function HackathonDetailPage() {
                 <CardTitle>Requirements</CardTitle>
               </CardHeader>
               <CardContent>
-                <ul className="space-y-2">
-                  {hackathon.requirements.map((requirement, index) => (
-                    <li key={index} className="flex items-start gap-2">
-                      <span className="text-primary mt-1">•</span>
-                      <span>{requirement}</span>
-                    </li>
-                  ))}
-                </ul>
+                {(hackathon.requirements || []).length > 0 ? (
+                  <ul className="space-y-2">
+                    {(hackathon.requirements || []).map(
+                      (requirement, index) => (
+                        <li key={index} className="flex items-start gap-2">
+                          <span className="text-primary mt-1">•</span>
+                          <span>{requirement}</span>
+                        </li>
+                      )
+                    )}
+                  </ul>
+                ) : (
+                  <p className="text-muted-foreground">
+                    No specific requirements
+                  </p>
+                )}
               </CardContent>
             </Card>
 
@@ -187,14 +195,18 @@ export default function HackathonDetailPage() {
                 <CardTitle>Rules</CardTitle>
               </CardHeader>
               <CardContent>
-                <ul className="space-y-2">
-                  {hackathon.rules.map((rule, index) => (
-                    <li key={index} className="flex items-start gap-2">
-                      <span className="text-primary mt-1">•</span>
-                      <span>{rule}</span>
-                    </li>
-                  ))}
-                </ul>
+                {(hackathon.rules || []).length > 0 ? (
+                  <ul className="space-y-2">
+                    {(hackathon.rules || []).map((rule, index) => (
+                      <li key={index} className="flex items-start gap-2">
+                        <span className="text-primary mt-1">•</span>
+                        <span>{rule}</span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-muted-foreground">No specific rules</p>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -208,26 +220,30 @@ export default function HackathonDetailPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {hackathon.tracks.map((track) => (
-                  <div key={track.id} className="p-4 border rounded-lg">
-                    <h4 className="font-medium mb-2">{track.name}</h4>
-                    <p className="text-sm text-gray-600 mb-3">
-                      {track.description}
-                    </p>
-                    <div className="space-y-1">
-                      <p className="text-xs font-medium text-gray-500">
-                        Criteria:
+              {(hackathon.tracks || []).length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {(hackathon.tracks || []).map((track) => (
+                    <div key={track.id} className="p-4 border rounded-lg">
+                      <h4 className="font-medium mb-2">{track.name}</h4>
+                      <p className="text-sm text-gray-600 mb-3">
+                        {track.description}
                       </p>
-                      {track.criteria.map((criteria, index) => (
-                        <p key={index} className="text-xs text-gray-600">
-                          • {criteria}
+                      <div className="space-y-1">
+                        <p className="text-xs font-medium text-gray-500">
+                          Criteria:
                         </p>
-                      ))}
+                        {(track.criteria || []).map((criteria, index) => (
+                          <p key={index} className="text-xs text-gray-600">
+                            • {criteria}
+                          </p>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-muted-foreground">No tracks defined</p>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -276,60 +292,66 @@ export default function HackathonDetailPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {hackathon.judges.map((judge) => (
-                    <div
-                      key={judge.id}
-                      className="flex items-start gap-3 p-3 border rounded-lg"
-                    >
-                      <Avatar>
-                        <AvatarImage src={judge.avatar} alt={judge.name} />
-                        <AvatarFallback>{judge.name.charAt(0)}</AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1">
-                        <h4 className="font-medium">{judge.name}</h4>
-                        <p className="text-sm text-gray-600">
-                          {judge.title} at {judge.company}
-                        </p>
-                        <p className="text-xs text-gray-500 mt-1">
-                          {judge.bio}
-                        </p>
-                        <div className="flex gap-2 mt-2">
-                          {judge.socialLinks.twitter && (
-                            <Button variant="ghost" size="sm" asChild>
-                              <Link
-                                href={judge.socialLinks.twitter}
-                                target="_blank"
-                              >
-                                <ExternalLink size={12} />
-                              </Link>
-                            </Button>
-                          )}
-                          {judge.socialLinks.linkedin && (
-                            <Button variant="ghost" size="sm" asChild>
-                              <Link
-                                href={judge.socialLinks.linkedin}
-                                target="_blank"
-                              >
-                                <ExternalLink size={12} />
-                              </Link>
-                            </Button>
-                          )}
-                          {judge.socialLinks.github && (
-                            <Button variant="ghost" size="sm" asChild>
-                              <Link
-                                href={judge.socialLinks.github}
-                                target="_blank"
-                              >
-                                <Github size={12} />
-                              </Link>
-                            </Button>
-                          )}
+                {(hackathon.judges || []).length > 0 ? (
+                  <div className="space-y-4">
+                    {(hackathon.judges || []).map((judge) => (
+                      <div
+                        key={judge.id}
+                        className="flex items-start gap-3 p-3 border rounded-lg"
+                      >
+                        <Avatar>
+                          <AvatarImage src={judge.avatar} alt={judge.name} />
+                          <AvatarFallback>
+                            {judge.name.charAt(0)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1">
+                          <h4 className="font-medium">{judge.name}</h4>
+                          <p className="text-sm text-gray-600">
+                            {judge.title} at {judge.company}
+                          </p>
+                          <p className="text-xs text-gray-500 mt-1">
+                            {judge.bio}
+                          </p>
+                          <div className="flex gap-2 mt-2">
+                            {judge.socialLinks?.twitter && (
+                              <Button variant="ghost" size="sm" asChild>
+                                <Link
+                                  href={judge.socialLinks.twitter}
+                                  target="_blank"
+                                >
+                                  <ExternalLink size={12} />
+                                </Link>
+                              </Button>
+                            )}
+                            {judge.socialLinks?.linkedin && (
+                              <Button variant="ghost" size="sm" asChild>
+                                <Link
+                                  href={judge.socialLinks.linkedin}
+                                  target="_blank"
+                                >
+                                  <ExternalLink size={12} />
+                                </Link>
+                              </Button>
+                            )}
+                            {judge.socialLinks?.github && (
+                              <Button variant="ghost" size="sm" asChild>
+                                <Link
+                                  href={judge.socialLinks.github}
+                                  target="_blank"
+                                >
+                                  <Github size={12} />
+                                </Link>
+                              </Button>
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-muted-foreground">No judges assigned</p>
+                )}
               </CardContent>
             </Card>
           </div>
