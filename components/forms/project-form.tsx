@@ -82,7 +82,6 @@ export default function ProjectForm({
   const [newMember, setNewMember] = useState<Partial<TeamMember>>({
     name: "",
     role: "",
-    email: "",
   });
 
   const { setLoading, hackathons, fetchHackathonsFromIPFS } =
