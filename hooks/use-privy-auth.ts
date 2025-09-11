@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { usePrivy } from '@privy-io/react-auth';
 import { useUserStore } from '@/stores/user-store';
 
