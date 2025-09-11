@@ -45,6 +45,9 @@
   --font-mono: var(--font-mono);
   --font-heading: var(--font-inter);
 }
+html {
+  box-shadow: none !important;
+}
 
 :root {
   --background: hsl(0 0% 100%);

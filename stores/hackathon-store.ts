@@ -1,5 +1,4 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
 
 export interface Hackathon {
   id: string;
@@ -74,6 +73,7 @@ export interface TeamMember {
   id: string;
   userId: string;
   name: string;
+  email? : string
   role: string;
   avatar?: string;
 }
@@ -100,14 +100,13 @@ interface HackathonState {
   setCurrentHackathon: (hackathon: Hackathon | null) => void;
   setUserProjects: (projects: Project[]) => void;
   addProject: (project: Project) => void;
+  fetchHackathonsFromIPFS: () => Promise<void>;
   setLoading: (isLoading: boolean) => void;
   setError: (error: string | null) => void;
   clearError: () => void;
 }
 
-export const useHackathonStore = create<HackathonState>()(
-  persist(
-    (set, get) => ({
+export const useHackathonStore = create<HackathonState>()((set, get) => ({
       hackathons: [],
       currentHackathon: null,
       userProjects: [],
@@ -134,16 +133,22 @@ export const useHackathonStore = create<HackathonState>()(
         const currentProjects = get().userProjects;
         set({ userProjects: [...currentProjects, project] });
       },
+      fetchHackathonsFromIPFS: async () => {
+        set({ isLoading: true, error: null });
+        try {
+          const response = await fetch('/api/hackathons');
+          if (!response.ok) {
+            throw new Error('Failed to fetch hackathons');
+          }
+          const hackathons = await response.json();
+          set({ hackathons, isLoading: false });
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : 'Failed to fetch hackathons';
+          set({ error: errorMessage, isLoading: false });
+        }
+      },
       setLoading: (isLoading) => set({ isLoading }),
       setError: (error) => set({ error }),
       clearError: () => set({ error: null }),
-    }),
-    {
-      name: 'athenaforge-hackathon-storage',
-      partialize: (state) => ({
-        hackathons: state.hackathons,
-        userProjects: state.userProjects,
-      }),
-    }
-  )
+    })
 );
