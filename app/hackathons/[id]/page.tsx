@@ -93,50 +93,77 @@ export default function HackathonDetailPage() {
         <div className="flex items-start justify-between mb-4">
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-2">
-              <h1 className="text-4xl font-bold">{hackathon.title}</h1>
+              <h1 className="text-4xl font-bold">
+                {hackathon.title || "Untitled Hackathon"}
+              </h1>
               <Badge
-                className={cn("px-3 py-1", getStatusColor(hackathon.status))}
+                className={cn(
+                  "px-3 py-1",
+                  getStatusColor(hackathon.status || "upcoming")
+                )}
               >
-                {getStatusText(hackathon.status)}
+                {getStatusText(hackathon.status || "upcoming")}
               </Badge>
             </div>
             <p className="text-xl text-gray-600 mb-4">
-              {hackathon.description}
+              {hackathon.description || "No description available"}
             </p>
 
             <div className="flex flex-wrap items-center gap-6 text-sm text-gray-500">
               <div className="flex items-center gap-2">
                 <Calendar size={16} />
                 <span>
-                  {format(new Date(hackathon.startDate), "MMM dd, yyyy")} -{" "}
-                  {format(new Date(hackathon.endDate), "MMM dd, yyyy")}
+                  {(() => {
+                    try {
+                      if (!hackathon.startDate || !hackathon.endDate) {
+                        return "Date TBD";
+                      }
+                      const start = new Date(hackathon.startDate);
+                      const end = new Date(hackathon.endDate);
+                      if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+                        return "Date TBD";
+                      }
+                      return `${format(start, "MMM dd, yyyy")} - ${format(
+                        end,
+                        "MMM dd, yyyy"
+                      )}`;
+                    } catch (error) {
+                      return "Date TBD";
+                    }
+                  })()}
                 </span>
               </div>
               <div className="flex items-center gap-2">
                 <Users size={16} />
-                <span>{hackathon.participants} participants</span>
+                <span>{hackathon.participants || 0} participants</span>
                 {hackathon.maxParticipants && (
                   <span>/ {hackathon.maxParticipants} max</span>
                 )}
               </div>
-              <div className="flex items-center gap-2">
-                <Clock size={16} />
-                <span>
-                  Registration until{" "}
-                  {format(
-                    new Date(hackathon.registrationDeadline),
-                    "MMM dd, yyyy"
-                  )}
-                </span>
-              </div>
+              {hackathon.registrationDeadline && (
+                <div className="flex items-center gap-2">
+                  <Clock size={16} />
+                  <span>
+                    Registration until{" "}
+                    {format(
+                      new Date(hackathon.registrationDeadline),
+                      "MMM dd, yyyy"
+                    )}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
 
           {hackathon.image && (
             <div className="ml-6">
               <img
-                src={hackathon.image}
-                alt={hackathon.title}
+                src={
+                  hackathon.image.startsWith("http")
+                    ? hackathon.image
+                    : `https://${hackathon.image}`
+                }
+                alt={hackathon.title || "hackathon"}
                 className="w-32 h-32 object-cover rounded-lg"
               />
             </div>
@@ -260,7 +287,7 @@ export default function HackathonDetailPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {hackathon.prizes
+                  {(hackathon.prizes || [])
                     .sort((a, b) => a.position - b.position)
                     .map((prize) => (
                       <div key={prize.id} className="p-4 border rounded-lg">
@@ -377,7 +404,15 @@ export default function HackathonDetailPage() {
                   </div>
                   <div className="text-right">
                     <p className="font-medium">
-                      {format(new Date(hackathon.createdAt), "MMM dd, yyyy")}
+                      {(() => {
+                        try {
+                          const date = new Date(hackathon.createdAt);
+                          if (isNaN(date.getTime())) return "Unknown date";
+                          return format(date, "MMM dd, yyyy");
+                        } catch (error) {
+                          return "Unknown date";
+                        }
+                      })()}
                     </p>
                   </div>
                 </div>
@@ -394,10 +429,12 @@ export default function HackathonDetailPage() {
                   </div>
                   <div className="text-right">
                     <p className="font-medium">
-                      {format(
-                        new Date(hackathon.registrationDeadline),
-                        "MMM dd, yyyy"
-                      )}
+                      {hackathon.registrationDeadline
+                        ? format(
+                            new Date(hackathon.registrationDeadline),
+                            "MMM dd, yyyy"
+                          )
+                        : "TBD"}
                     </p>
                   </div>
                 </div>
@@ -414,7 +451,9 @@ export default function HackathonDetailPage() {
                   </div>
                   <div className="text-right">
                     <p className="font-medium">
-                      {format(new Date(hackathon.startDate), "MMM dd, yyyy")}
+                      {hackathon.startDate
+                        ? format(new Date(hackathon.startDate), "MMM dd, yyyy")
+                        : "TBD"}
                     </p>
                   </div>
                 </div>
@@ -431,7 +470,9 @@ export default function HackathonDetailPage() {
                   </div>
                   <div className="text-right">
                     <p className="font-medium">
-                      {format(new Date(hackathon.endDate), "MMM dd, yyyy")}
+                      {hackathon.endDate
+                        ? format(new Date(hackathon.endDate), "MMM dd, yyyy")
+                        : "TBD"}
                     </p>
                   </div>
                 </div>

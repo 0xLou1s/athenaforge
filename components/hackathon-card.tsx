@@ -91,8 +91,12 @@ export default function HackathonCard({
     >
       <div className="relative">
         <img
-          src={`https://${hackathon.image}` || "/placeholder-hackathon.jpg"}
-          alt={hackathon.title}
+          src={
+            hackathon.image
+              ? `https://${hackathon.image}`
+              : "/placeholder-hackathon.jpg"
+          }
+          alt={hackathon.title || "hackathon"}
           className="w-full h-48 object-cover"
         />
         <Badge
@@ -105,9 +109,11 @@ export default function HackathonCard({
       </div>
 
       <CardHeader>
-        <CardTitle className="line-clamp-2">{hackathon.title}</CardTitle>
+        <CardTitle className="line-clamp-2">
+          {hackathon.title || "Untitled Hackathon"}
+        </CardTitle>
         <CardDescription className={showFullDescription ? "" : "line-clamp-3"}>
-          {hackathon.description}
+          {hackathon.description || "No description available"}
         </CardDescription>
       </CardHeader>
 
@@ -122,7 +128,7 @@ export default function HackathonCard({
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Users className="h-4 w-4" />
           <span>
-            {hackathon.participants} participants
+            {hackathon.participants || 0} participants
             {hackathon.maxParticipants && ` / ${hackathon.maxParticipants}`}
           </span>
         </div>
