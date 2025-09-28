@@ -97,7 +97,6 @@ export default function RootLayout({
         <RootProviders>
           <div className="w-full flex flex-col mb-2 gap-2 fixed top-0 left-0 right-0 z-50">
             <div className="w-full max-w-[90rem] mx-auto px-2 lg:px-0">
-              <AnnouncementBar />
               <Header />
             </div>
           </div>
