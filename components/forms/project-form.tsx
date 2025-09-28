@@ -25,13 +25,10 @@ import {
 import { Plus, X, Upload, Github, ExternalLink, Video } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useIPFS } from "@/hooks/use-ipfs";
-import {
-  useHackathonStore,
-  type Project,
-  type TeamMember,
-} from "@/stores/hackathon-store";
+import { useHackathonStore } from "@/stores/hackathon-store";
 import { usePrivy } from "@privy-io/react-auth";
 import { toast } from "sonner";
+import { Project, TeamMember } from "@/stores";
 
 // Form schemas
 const teamMemberSchema = z.object({

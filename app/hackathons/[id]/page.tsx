@@ -24,11 +24,7 @@ import {
   Github,
   Video,
 } from "lucide-react";
-import {
-  useHackathonStore,
-  type Hackathon,
-  type Project,
-} from "@/stores/hackathon-store";
+import { useHackathonStore } from "@/stores/hackathon-store";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
