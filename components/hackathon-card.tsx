@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Calendar, Users, Trophy } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
-import { type Hackathon } from "@/stores/hackathon-store";
+import { Hackathon } from "@/stores";
 
 interface HackathonCardProps {
   hackathon: Hackathon;

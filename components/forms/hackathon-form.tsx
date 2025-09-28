@@ -31,16 +31,11 @@ import {
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useIPFS } from "@/hooks/use-ipfs";
-import {
-  useHackathonStore,
-  type Hackathon,
-  type Prize,
-  type Judge,
-  type Track,
-} from "@/stores/hackathon-store";
+import { useHackathonStore } from "@/stores/hackathon-store";
 import { usePrivy } from "@privy-io/react-auth";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { Hackathon, Prize } from "@/stores";
 
 // Form schemas
 const prizeSchema = z.object({
