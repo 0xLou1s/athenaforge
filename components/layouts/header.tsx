@@ -63,7 +63,7 @@ export default function Header() {
         const Icon = value.icon;
         return (
           <Button
-            key={key}
+            key={`social-${key}`}
             variant="ghost"
             asChild
             className="h-full aspect-square hidden md:flex"
