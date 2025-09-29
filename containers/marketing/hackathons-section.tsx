@@ -88,7 +88,9 @@ export default function HackathonsSection() {
                 <img
                   src={
                     hackathon.image
-                      ? `https://${hackathon.image}`
+                      ? hackathon.image.startsWith('http')
+                        ? hackathon.image
+                        : `https://${hackathon.image}`
                       : "/placeholder-hackathon.jpg"
                   }
                   alt={hackathon.title || "hackathon"}
@@ -103,7 +105,7 @@ export default function HackathonsSection() {
                   </p>
                   <div className="flex justify-between items-center text-xs text-muted-foreground mb-4">
                     <span className="mr-2">
-                      {hackathon.participants || 0} participants
+                      {Array.isArray(hackathon.participants) ? hackathon.participants.length : hackathon.participants || 0} participants
                     </span>
                     <span>
                       {formatDateRange(hackathon.startDate, hackathon.endDate)}
