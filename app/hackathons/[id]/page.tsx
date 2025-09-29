@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
+import { usePrivy } from "@privy-io/react-auth";
 import {
   Card,
   CardContent,
@@ -9,6 +10,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
+import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -30,15 +33,146 @@ import {
   type Project,
 } from "@/stores/hackathon-store";
 import { format } from "date-fns";
-import { cn } from "@/lib/utils";
-import Link from "next/link";
 
 export default function HackathonDetailPage() {
   const params = useParams();
   const hackathonId = params.id as string;
-  const { hackathons } = useHackathonStore();
+  const { hackathons, fetchHackathonsFromIPFS } = useHackathonStore();
+  const { user, authenticated } = usePrivy();
+  const [isLoading, setIsLoading] = useState(true);
+  const [isRegistering, setIsRegistering] = useState(false);
+  const [registrationMessage, setRegistrationMessage] = useState<string | null>(
+    null
+  );
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [projectsLoading, setProjectsLoading] = useState(false);
+  const [isUserRegistered, setIsUserRegistered] = useState(false);
+  const [checkingRegistration, setCheckingRegistration] = useState(false);
 
   const hackathon = hackathons.find((h) => h.id === hackathonId);
+
+  useEffect(() => {
+    const loadHackathons = async () => {
+      if (hackathons.length === 0) {
+        await fetchHackathonsFromIPFS();
+      }
+      setIsLoading(false);
+    };
+
+    loadHackathons();
+  }, [hackathons.length, fetchHackathonsFromIPFS]);
+
+  // Check if user is already registered for this hackathon
+  const checkUserRegistration = async () => {
+    if (!hackathonId || !user?.id || !authenticated) {
+      setIsUserRegistered(false);
+      return;
+    }
+
+    setCheckingRegistration(true);
+
+    try {
+      const response = await fetch(
+        `/api/hackathons/${hackathonId}/check-registration`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            userId: user.id,
+          }),
+        }
+      );
+
+      const result = await response.json();
+
+      setIsUserRegistered(result.isRegistered || false);
+    } catch (error) {
+      setIsUserRegistered(false);
+    } finally {
+      setCheckingRegistration(false);
+    }
+  };
+
+  useEffect(() => {
+    if (hackathon && authenticated) {
+      checkUserRegistration();
+    }
+  }, [hackathon, authenticated, user?.id]);
+
+  // Load projects for this hackathon
+  const loadProjects = async () => {
+    if (!hackathonId) return;
+
+    setProjectsLoading(true);
+    try {
+      const response = await fetch(`/api/hackathons/${hackathonId}/projects`);
+      if (response.ok) {
+        const projectsData = await response.json();
+        setProjects(projectsData);
+      }
+    } catch (error) {
+      console.error("Error loading projects:", error);
+    } finally {
+      setProjectsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (hackathon) {
+      loadProjects();
+    }
+  }, [hackathon]);
+
+  // Handle hackathon registration
+  const handleRegistration = async () => {
+    if (!hackathonId || isRegistering || !user?.id || !authenticated) {
+      return;
+    }
+
+    setIsRegistering(true);
+    setRegistrationMessage(null);
+
+    try {
+      const response = await fetch(`/api/hackathons/${hackathonId}/register`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userId: user.id,
+          userEmail: user.email?.address,
+          userName: user.email?.address || user.id,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        setRegistrationMessage("Successfully registered for hackathon!");
+        setIsUserRegistered(true);
+        // Refresh hackathon data to update participant count
+        await fetchHackathonsFromIPFS();
+      } else {
+        setRegistrationMessage(result.error || "Registration failed");
+      }
+    } catch (error) {
+      setRegistrationMessage("Failed to register. Please try again.");
+    } finally {
+      setIsRegistering(false);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="max-w-4xl mx-auto p-6">
+        <div className="text-center">
+          <p>Loading hackathon...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!hackathon) {
     return (
@@ -48,7 +182,8 @@ export default function HackathonDetailPage() {
             <div className="text-center">
               <h2 className="text-2xl font-bold mb-2">Hackathon Not Found</h2>
               <p className="text-gray-600 mb-4">
-                The hackathon you're looking for doesn't exist.
+                The hackathon you're looking for doesn't exist or hasn't loaded
+                yet.
               </p>
               <Button asChild>
                 <Link href="/hackathons">Back to Hackathons</Link>
@@ -84,6 +219,31 @@ export default function HackathonDetailPage() {
       default:
         return status;
     }
+  };
+
+  const isHackathonFull = () => {
+    if (!hackathon) return false;
+    const maxParticipants = hackathon.maxParticipants;
+    const participants = hackathon.participants || [];
+    const participantCount = Array.isArray(participants)
+      ? participants.length
+      : 0;
+    return (
+      maxParticipants &&
+      typeof maxParticipants === "number" &&
+      maxParticipants > 0 &&
+      participantCount >= maxParticipants
+    );
+  };
+
+  const isRegistrationExpired = () => {
+    if (!hackathon) return true;
+    const registrationDeadline = hackathon.registrationDeadline;
+    const now = new Date();
+    const deadline = registrationDeadline
+      ? new Date(registrationDeadline)
+      : null;
+    return registrationDeadline && deadline && now > deadline;
   };
 
   return (
@@ -135,8 +295,13 @@ export default function HackathonDetailPage() {
               </div>
               <div className="flex items-center gap-2">
                 <Users size={16} />
-                <span>{hackathon.participants || 0} participants</span>
-                {hackathon.maxParticipants && (
+                <span>
+                  {Array.isArray(hackathon?.participants)
+                    ? hackathon.participants.length
+                    : 0}{" "}
+                  participants
+                </span>
+                {hackathon?.maxParticipants && (
                   <span>/ {hackathon.maxParticipants} max</span>
                 )}
               </div>
@@ -171,13 +336,65 @@ export default function HackathonDetailPage() {
         </div>
 
         <div className="flex gap-4">
-          <Button size="lg">Register for Hackathon</Button>
+          {(() => {
+            const registering = isRegistering;
+            const full = isHackathonFull();
+            const expired = isRegistrationExpired();
+            const disabled = registering || full || expired;
+
+            if (!authenticated) {
+              return (
+                <Button size="lg" disabled>
+                  Please login to register
+                </Button>
+              );
+            }
+
+            if (checkingRegistration) {
+              return (
+                <Button size="lg" disabled>
+                  Checking registration...
+                </Button>
+              );
+            }
+
+            if (isUserRegistered) {
+              return (
+                <Button size="lg" disabled variant="outline">
+                  Already registered ✓
+                </Button>
+              );
+            }
+
+            return (
+              <Button
+                size="lg"
+                onClick={handleRegistration}
+                disabled={!!disabled}
+              >
+                {registering ? "Registering..." : "Register for Hackathon"}
+              </Button>
+            );
+          })()}
           <Button variant="outline" size="lg" asChild>
-            <Link href={`/submit-project?hackathon=${hackathon.id}`}>
+            <Link href={`/hackathons/${hackathon.id}/submit`}>
               Submit Project
             </Link>
           </Button>
         </div>
+
+        {/* Registration Message */}
+        {registrationMessage && (
+          <div
+            className={`p-3 rounded-lg ${
+              registrationMessage.includes("Successfully")
+                ? "bg-green-50 text-green-800 border border-green-200"
+                : "bg-red-50 text-red-800 border border-red-200"
+            }`}
+          >
+            {registrationMessage}
+          </div>
+        )}
       </div>
 
       {/* Tabs */}
@@ -486,16 +703,116 @@ export default function HackathonDetailPage() {
             <CardHeader>
               <CardTitle>Submitted Projects</CardTitle>
               <CardDescription>
-                Projects submitted to this hackathon
+                Projects submitted to this hackathon ({projects.length}{" "}
+                projects)
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-8">
-                <p className="text-gray-500">No projects submitted yet.</p>
-                <p className="text-sm text-gray-400 mt-2">
-                  Be the first to submit a project!
-                </p>
-              </div>
+              {projectsLoading ? (
+                <div className="text-center py-8">
+                  <p className="text-gray-500">Loading projects...</p>
+                </div>
+              ) : projects.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {projects.map((project: Project) => (
+                    <div
+                      key={project.id}
+                      className="border rounded-lg p-4 hover:shadow-md transition-shadow"
+                    >
+                      <div className="flex justify-between items-start mb-2">
+                        <h4 className="font-semibold text-lg">
+                          <Link
+                            href={`/projects/${project.id}`}
+                            className="hover:text-blue-600 transition-colors"
+                          >
+                            {project.title}
+                          </Link>
+                        </h4>
+                        <Badge variant="outline" className="text-xs">
+                          {project.team?.length ||
+                            project.teamInfo?.members?.length ||
+                            0}{" "}
+                          members
+                        </Badge>
+                      </div>
+                      <p className="text-gray-600 text-sm mb-3 line-clamp-3">
+                        {project.description}
+                      </p>
+
+                      {/* Team members */}
+                      <div className="mb-3">
+                        <p className="text-xs text-gray-500 mb-1">Team:</p>
+                        <div className="flex flex-wrap gap-1">
+                          {project.team
+                            ?.slice(0, 3)
+                            .map((member: any, index: number) => (
+                              <span
+                                key={index}
+                                className="text-xs bg-gray-100 px-2 py-1 rounded"
+                              >
+                                {member.name}
+                              </span>
+                            ))}
+                          {project.team?.length > 3 && (
+                            <span className="text-xs text-gray-500">
+                              +{project.team.length - 3} more
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Links */}
+                      <div className="flex gap-2 flex-wrap">
+                        {project.repositoryUrl && (
+                          <a
+                            href={project.repositoryUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800"
+                          >
+                            <Github size={12} />
+                            Code
+                          </a>
+                        )}
+                        {project.demoUrl && (
+                          <a
+                            href={project.demoUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-xs text-green-600 hover:text-green-800"
+                          >
+                            <ExternalLink size={12} />
+                            Demo
+                          </a>
+                        )}
+                        {project.videoUrl && (
+                          <a
+                            href={project.videoUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-xs text-red-600 hover:text-red-800"
+                          >
+                            <Video size={12} />
+                            Video
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-gray-500">No projects submitted yet.</p>
+                  <p className="text-sm text-gray-400 mt-2">
+                    Be the first to submit a project!
+                  </p>
+                  <Button asChild className="mt-4">
+                    <Link href={`/hackathons/${hackathonId}/submit`}>
+                      Submit Project
+                    </Link>
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
