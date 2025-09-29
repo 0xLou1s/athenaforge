@@ -31,13 +31,13 @@ import {
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useIPFS } from "@/hooks/use-ipfs";
-import {
-  useHackathonStore,
-  type Hackathon,
-  type Prize,
-  type Judge,
-  type Track,
-} from "@/stores/hackathon-store";
+import { useHackathonStore } from "@/stores/hackathon-store";
+import type { 
+  Hackathon, 
+  Prize, 
+  Judge, 
+  Track 
+} from "@/types/hackathon";
 import { usePrivy } from "@privy-io/react-auth";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -501,14 +501,456 @@ function PrizesStep({ data, onNext, onPrev, isFirst, isLast }: StepProps) {
   );
 }
 
-// Step 3: Requirements & Rules
+// Step 3: Tracks
+function TracksStep({ data, onNext, onPrev, isFirst, isLast }: StepProps) {
+  const [tracks, setTracks] = useState<Track[]>(
+    (data.tracks || []).map((track, index) => ({
+      ...track,
+      id: track.id || `track-${index}`,
+    }))
+  );
+  const [newTrack, setNewTrack] = useState<Partial<Track>>({
+    name: "",
+    description: "",
+    criteria: [],
+  });
+  const [newCriteria, setNewCriteria] = useState("");
+
+  const addCriteria = () => {
+    if (newCriteria.trim()) {
+      setNewTrack({
+        ...newTrack,
+        criteria: [...(newTrack.criteria || []), newCriteria.trim()],
+      });
+      setNewCriteria("");
+    }
+  };
+
+  const removeCriteria = (index: number) => {
+    setNewTrack({
+      ...newTrack,
+      criteria: (newTrack.criteria || []).filter((_, i) => i !== index),
+    });
+  };
+
+  const addTrack = () => {
+    if (
+      newTrack.name &&
+      newTrack.description &&
+      newTrack.criteria &&
+      newTrack.criteria.length > 0
+    ) {
+      const track: Track = {
+        id: Date.now().toString(),
+        name: newTrack.name,
+        description: newTrack.description,
+        criteria: newTrack.criteria,
+      };
+      setTracks([...tracks, track]);
+      setNewTrack({
+        name: "",
+        description: "",
+        criteria: [],
+      });
+    }
+  };
+
+  const removeTrack = (id: string) => {
+    setTracks(tracks.filter((track) => track.id !== id));
+  };
+
+  const handleNext = () => {
+    onNext({ ...data, tracks });
+  };
+
+  return (
+    <Card className="shadow-none border-0">
+      <CardHeader className="space-y-1">
+        <CardTitle className="text-2xl">Tracks</CardTitle>
+        <CardDescription className="text-base">
+          Define competition tracks for your hackathon (optional)
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-8">
+        <div className="space-y-4">
+          {tracks.map((track) => (
+            <div key={track.id} className="p-4 border rounded-lg">
+              <div className="flex justify-between items-start">
+                <div className="flex-1">
+                  <h4 className="font-medium">{track.name}</h4>
+                  <p className="text-sm text-gray-600 mb-2">{track.description}</p>
+                  <div className="flex flex-wrap gap-1">
+                    {track.criteria.map((criteria, index) => (
+                      <Badge key={index} variant="outline">
+                        {criteria}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => removeTrack(track.id)}
+                >
+                  <X size={16} />
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="space-y-4 p-4 border border-dashed rounded-lg">
+          <h4 className="font-medium">Add New Track</h4>
+          <div className="space-y-4">
+            <Input
+              placeholder="Track name (e.g., Web3, AI/ML, Mobile)"
+              value={newTrack.name}
+              onChange={(e) =>
+                setNewTrack({ ...newTrack, name: e.target.value })
+              }
+            />
+            <Textarea
+              placeholder="Track description"
+              value={newTrack.description}
+              onChange={(e) =>
+                setNewTrack({ ...newTrack, description: e.target.value })
+              }
+            />
+            
+            {/* Criteria Section */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Judging Criteria</label>
+              <div className="space-y-2">
+                {(newTrack.criteria || []).map((criteria, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center gap-2 p-2 border rounded"
+                  >
+                    <span className="flex-1">{criteria}</span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removeCriteria(index)}
+                    >
+                      <X size={16} />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Add judging criteria (e.g., Innovation, Technical Implementation)"
+                  value={newCriteria}
+                  onChange={(e) => setNewCriteria(e.target.value)}
+                  onKeyPress={(e) => e.key === "Enter" && addCriteria()}
+                />
+                <Button onClick={addCriteria}>
+                  <Plus size={16} />
+                </Button>
+              </div>
+            </div>
+          </div>
+          <Button 
+            onClick={addTrack} 
+            className="w-full"
+            disabled={!newTrack.name || !newTrack.description || (newTrack.criteria || []).length === 0}
+          >
+            <Plus size={16} className="mr-2" />
+            Add Track
+          </Button>
+        </div>
+
+        <div className="flex justify-between">
+          <Button variant="outline" onClick={onPrev}>
+            Previous
+          </Button>
+          <Button onClick={handleNext}>Next</Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// Interface for new judge form
+interface NewJudgeForm {
+  name: string;
+  title: string;
+  company: string;
+  bio: string;
+  avatar: string;
+  twitter: string;
+  linkedin: string;
+  github: string;
+}
+
+// Step 4: Judges
+function JudgesStep({ data, onNext, onPrev, isFirst, isLast }: StepProps) {
+  const [judges, setJudges] = useState<Judge[]>(
+    (data.judges || []).map((judge, index) => {
+      const judgeData = judge as any; // Cast to any to access potential socialLinks
+      return {
+        id: judge.id || `judge-${index}`,
+        name: judge.name || "",
+        title: judge.title || "",
+        company: judge.company || "",
+        bio: judge.bio || "",
+        avatar: judge.avatar || "",
+        socialLinks: {
+          twitter: judgeData.socialLinks?.twitter || "",
+          linkedin: judgeData.socialLinks?.linkedin || "",
+          github: judgeData.socialLinks?.github || "",
+        },
+      };
+    })
+  );
+  const [newJudge, setNewJudge] = useState<NewJudgeForm>({
+    name: "",
+    title: "",
+    company: "",
+    bio: "",
+    avatar: "",
+    twitter: "",
+    linkedin: "",
+    github: "",
+  });
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string>("");
+  const { uploadFile, isLoading: isUploading } = useIPFS();
+
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setAvatarFile(file);
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setAvatarPreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const addJudge = async () => {
+    if (
+      newJudge.name &&
+      newJudge.title &&
+      newJudge.company &&
+      newJudge.bio
+    ) {
+      let avatarUrl = "";
+
+      if (avatarFile) {
+        try {
+          const uploadResult = await uploadFile(avatarFile, {
+            name: `judge-avatar-${Date.now()}`,
+            keyvalues: {
+              type: "judge-avatar",
+            },
+          });
+          avatarUrl = uploadResult.url;
+        } catch (error) {
+          toast.error("Failed to upload avatar");
+          return;
+        }
+      }
+
+      const judge: Judge = {
+        id: Date.now().toString(),
+        name: newJudge.name,
+        title: newJudge.title,
+        company: newJudge.company,
+        bio: newJudge.bio,
+        avatar: avatarUrl,
+        socialLinks: {
+          twitter: newJudge.twitter || "",
+          linkedin: newJudge.linkedin || "",
+          github: newJudge.github || "",
+        },
+      };
+      setJudges([...judges, judge]);
+      setNewJudge({
+        name: "",
+        title: "",
+        company: "",
+        bio: "",
+        avatar: "",
+        twitter: "",
+        linkedin: "",
+        github: "",
+      });
+      setAvatarFile(null);
+      setAvatarPreview("");
+    }
+  };
+
+  const removeJudge = (id: string) => {
+    setJudges(judges.filter((judge) => judge.id !== id));
+  };
+
+  const handleNext = () => {
+    onNext({ ...data, judges });
+  };
+
+  return (
+    <Card className="shadow-none border-0">
+      <CardHeader className="space-y-1">
+        <CardTitle className="text-2xl">Judges</CardTitle>
+        <CardDescription className="text-base">
+          Add judges for your hackathon (optional)
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-8">
+        <div className="space-y-4">
+          {judges.map((judge) => (
+            <div key={judge.id} className="p-4 border rounded-lg">
+              <div className="flex justify-between items-start">
+                <div className="flex gap-4 flex-1">
+                  {judge.avatar && (
+                    <img
+                      src={judge.avatar}
+                      alt={judge.name}
+                      className="w-16 h-16 rounded-full object-cover"
+                    />
+                  )}
+                  <div className="flex-1">
+                    <h4 className="font-medium">{judge.name}</h4>
+                    <p className="text-sm text-gray-600">
+                      {judge.title} at {judge.company}
+                    </p>
+                    <p className="text-sm text-gray-500 mt-1">{judge.bio}</p>
+                    <div className="flex gap-2 mt-2">
+                      {judge.socialLinks.twitter && (
+                        <Badge variant="outline">Twitter</Badge>
+                      )}
+                      {judge.socialLinks.linkedin && (
+                        <Badge variant="outline">LinkedIn</Badge>
+                      )}
+                      {judge.socialLinks.github && (
+                        <Badge variant="outline">GitHub</Badge>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => removeJudge(judge.id)}
+                >
+                  <X size={16} />
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="space-y-4 p-4 border border-dashed rounded-lg">
+          <h4 className="font-medium">Add New Judge</h4>
+          <div className="space-y-4">
+            {/* Avatar Upload */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Avatar (Optional)</label>
+              <div className="flex items-center gap-4">
+                {avatarPreview && (
+                  <img
+                    src={avatarPreview}
+                    alt="Preview"
+                    className="w-16 h-16 rounded-full object-cover"
+                  />
+                )}
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleAvatarChange}
+                  className="text-sm"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Input
+                placeholder="Judge name"
+                value={newJudge.name}
+                onChange={(e) =>
+                  setNewJudge({ ...newJudge, name: e.target.value })
+                }
+              />
+              <Input
+                placeholder="Title"
+                value={newJudge.title}
+                onChange={(e) =>
+                  setNewJudge({ ...newJudge, title: e.target.value })
+                }
+              />
+              <Input
+                placeholder="Company"
+                value={newJudge.company}
+                onChange={(e) =>
+                  setNewJudge({ ...newJudge, company: e.target.value })
+                }
+              />
+            </div>
+            
+            <Textarea
+              placeholder="Bio"
+              value={newJudge.bio}
+              onChange={(e) =>
+                setNewJudge({ ...newJudge, bio: e.target.value })
+              }
+            />
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Input
+                placeholder="Twitter handle"
+                value={newJudge.twitter}
+                onChange={(e) =>
+                  setNewJudge({ ...newJudge, twitter: e.target.value })
+                }
+              />
+              <Input
+                placeholder="LinkedIn profile"
+                value={newJudge.linkedin}
+                onChange={(e) =>
+                  setNewJudge({ ...newJudge, linkedin: e.target.value })
+                }
+              />
+              <Input
+                placeholder="GitHub username"
+                value={newJudge.github}
+                onChange={(e) =>
+                  setNewJudge({ ...newJudge, github: e.target.value })
+                }
+              />
+            </div>
+          </div>
+          <Button 
+            onClick={addJudge} 
+            className="w-full"
+            disabled={!newJudge.name || !newJudge.title || !newJudge.company || !newJudge.bio || isUploading}
+          >
+            <Plus size={16} className="mr-2" />
+            {isUploading ? "Uploading..." : "Add Judge"}
+          </Button>
+        </div>
+
+        <div className="flex justify-between">
+          <Button variant="outline" onClick={onPrev}>
+            Previous
+          </Button>
+          <Button onClick={handleNext}>Next</Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// Step 5: Requirements & Rules
 function RequirementsStep({
   data,
   onNext,
   onPrev,
   isFirst,
   isLast,
-}: StepProps) {
+  isSubmitting,
+}: StepProps & { isSubmitting?: boolean }) {
   const [requirements, setRequirements] = useState<string[]>(
     data.requirements || []
   );
@@ -621,7 +1063,9 @@ function RequirementsStep({
           <Button variant="outline" onClick={onPrev}>
             Previous
           </Button>
-          <Button onClick={handleNext}>Create Hackathon</Button>
+          <Button onClick={handleNext} disabled={isSubmitting}>
+            {isSubmitting ? "Creating..." : "Create Hackathon"}
+          </Button>
         </div>
       </CardContent>
     </Card>
@@ -632,6 +1076,7 @@ function RequirementsStep({
 export default function HackathonForm() {
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<Partial<HackathonFormData>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { setLoading, fetchHackathonsFromIPFS } = useHackathonStore();
   const { uploadJSON } = useIPFS();
   const { user } = usePrivy();
@@ -640,6 +1085,8 @@ export default function HackathonForm() {
   const steps = [
     { title: "Basic Info", component: BasicInfoStep },
     { title: "Prizes", component: PrizesStep },
+    { title: "Tracks", component: TracksStep },
+    { title: "Judges", component: JudgesStep },
     { title: "Requirements & Rules", component: RequirementsStep },
   ];
 
@@ -664,61 +1111,37 @@ export default function HackathonForm() {
       return;
     }
 
+    if (isSubmitting) {
+      return; // Prevent multiple submissions
+    }
+
+    setIsSubmitting(true);
     setLoading(true);
     try {
-      // Upload hackathon data to IPFS
+      // Prepare hackathon data
       const hackathonData = {
         ...formData,
         organizerId: user.id,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+        startDate: formData.startDate?.toISOString(),
+        endDate: formData.endDate?.toISOString(),
+        registrationDeadline: formData.registrationDeadline?.toISOString(),
       };
 
-      const uploadResult = await uploadJSON(hackathonData, {
-        name: `hackathon-${Date.now()}`,
-        keyvalues: {
-          type: "hackathon",
-          organizer: user.id,
+      // Call API to create hackathon
+      const response = await fetch("/api/hackathons/create", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
         },
+        body: JSON.stringify(hackathonData),
       });
 
-      // Create hackathon object
-      const hackathon: Hackathon = {
-        id: Date.now().toString(),
-        title: formData.title!,
-        description: formData.description!,
-        image: formData.image || "",
-        startDate: formData.startDate!.toISOString(),
-        endDate: formData.endDate!.toISOString(),
-        registrationDeadline: formData.registrationDeadline!.toISOString(),
-        status: "upcoming",
-        participants: 0,
-        maxParticipants: formData.maxParticipants,
-        prizes: (formData.prizes || []).map((prize, index) => ({
-          ...prize,
-          id: prize.id || `prize-${index}`,
-        })),
-        judges: (formData.judges || []).map((judge, index) => ({
-          ...judge,
-          id: judge.id || `judge-${index}`,
-          avatar: judge.avatar || "",
-          socialLinks: {
-            twitter: judge.twitter || "",
-            linkedin: judge.linkedin || "",
-            github: judge.github || "",
-          },
-        })),
-        tracks: (formData.tracks || []).map((track, index) => ({
-          ...track,
-          id: track.id || `track-${index}`,
-        })),
-        requirements: formData.requirements || [],
-        rules: formData.rules || [],
-        ipfsHash: uploadResult.cid,
-        organizerId: user.id,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to create hackathon");
+      }
+
+      const result = await response.json();
 
       toast.success("Hackathon created successfully!");
 
@@ -732,9 +1155,11 @@ export default function HackathonForm() {
       // Redirect to hackathons page
       router.push("/hackathons");
     } catch (error) {
-      toast.error("Failed to create hackathon");
+      const errorMessage = error instanceof Error ? error.message : "Failed to create hackathon";
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -785,6 +1210,7 @@ export default function HackathonForm() {
           onPrev={handlePrev}
           isFirst={currentStep === 1}
           isLast={currentStep === steps.length}
+          isSubmitting={isSubmitting}
         />
       )}
     </div>
