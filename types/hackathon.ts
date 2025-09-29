@@ -14,6 +14,7 @@ export interface Hackathon {
   tracks: Track[];
   requirements: string[];
   rules: string[];
+  projects?: Project[]; // Add projects field
   ipfsHash: string;
   organizerId: string;
   createdAt: string;
@@ -62,9 +63,35 @@ export interface Project {
   videoUrl?: string;
   ipfsHash: string;
   submittedAt: string;
+  submittedBy: string; // Add submittedBy field
+  technologies?: string[]; // Add optional fields
+  challenges?: string;
+  achievements?: string;
+  futureWork?: string;
+  files?: any[];
+  teamInfo?: {
+    members: TeamMember[];
+  };
   scores?: Score[];
   totalScore?: number;
   rank?: number;
+}
+
+export interface Team {
+  id: string;
+  name: string;
+  description: string;
+  hackathonId: string;
+  leaderId: string;
+  members: TeamMember[];
+  inviteCode: string;
+  maxMembers: number;
+  isPublic: boolean;
+  skills: string[];
+  lookingFor: string[];
+  ipfsHash: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface TeamMember {
@@ -74,6 +101,8 @@ export interface TeamMember {
   email?: string;
   role: string;
   avatar?: string;
+  joinedAt: string;
+  skills?: string[];
 }
 
 export interface Score {
