@@ -5,6 +5,7 @@ import type { Hackathon } from "@/types/hackathon";
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
+
     const {
       title,
       description,
@@ -22,7 +23,14 @@ export async function POST(request: NextRequest) {
     } = body;
 
     // Validate required fields
-    if (!title || !description || !startDate || !endDate || !registrationDeadline || !organizerId) {
+    if (
+      !title ||
+      !description ||
+      !startDate ||
+      !endDate ||
+      !registrationDeadline ||
+      !organizerId
+    ) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 }
@@ -57,7 +65,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Create hackathon ID
-    const hackathonId = `hackathon-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const hackathonId = `hackathon-${Date.now()}-${Math.random()
+      .toString(36)
+      .substr(2, 9)}`;
 
     // Determine status based on dates
     const now = new Date();

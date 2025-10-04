@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,27 +20,16 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import {
-  CalendarIcon,
-  Plus,
-  X,
-  Upload,
-  Image as ImageIcon,
-} from "lucide-react";
+import { CalendarIcon, Plus, X, Image as ImageIcon } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useIPFS } from "@/hooks/use-ipfs";
 import { useHackathonStore } from "@/stores/hackathon-store";
-import type { 
-  Hackathon, 
-  Prize, 
-  Judge, 
-  Track 
-} from "@/types/hackathon";
+import type { Judge, Track } from "@/types/hackathon";
 import { usePrivy } from "@privy-io/react-auth";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import { Hackathon, Prize } from "@/stores";
+import { Prize } from "@/stores";
 
 // Form schemas
 const prizeSchema = z.object({
@@ -579,7 +567,9 @@ function TracksStep({ data, onNext, onPrev, isFirst, isLast }: StepProps) {
               <div className="flex justify-between items-start">
                 <div className="flex-1">
                   <h4 className="font-medium">{track.name}</h4>
-                  <p className="text-sm text-gray-600 mb-2">{track.description}</p>
+                  <p className="text-sm text-gray-600 mb-2">
+                    {track.description}
+                  </p>
                   <div className="flex flex-wrap gap-1">
                     {track.criteria.map((criteria, index) => (
                       <Badge key={index} variant="outline">
@@ -617,7 +607,7 @@ function TracksStep({ data, onNext, onPrev, isFirst, isLast }: StepProps) {
                 setNewTrack({ ...newTrack, description: e.target.value })
               }
             />
-            
+
             {/* Criteria Section */}
             <div className="space-y-2">
               <label className="text-sm font-medium">Judging Criteria</label>
@@ -651,10 +641,14 @@ function TracksStep({ data, onNext, onPrev, isFirst, isLast }: StepProps) {
               </div>
             </div>
           </div>
-          <Button 
-            onClick={addTrack} 
+          <Button
+            onClick={addTrack}
             className="w-full"
-            disabled={!newTrack.name || !newTrack.description || (newTrack.criteria || []).length === 0}
+            disabled={
+              !newTrack.name ||
+              !newTrack.description ||
+              (newTrack.criteria || []).length === 0
+            }
           >
             <Plus size={16} className="mr-2" />
             Add Track
@@ -731,12 +725,7 @@ function JudgesStep({ data, onNext, onPrev, isFirst, isLast }: StepProps) {
   };
 
   const addJudge = async () => {
-    if (
-      newJudge.name &&
-      newJudge.title &&
-      newJudge.company &&
-      newJudge.bio
-    ) {
+    if (newJudge.name && newJudge.title && newJudge.company && newJudge.bio) {
       let avatarUrl = "";
 
       if (avatarFile) {
@@ -889,7 +878,7 @@ function JudgesStep({ data, onNext, onPrev, isFirst, isLast }: StepProps) {
                 }
               />
             </div>
-            
+
             <Textarea
               placeholder="Bio"
               value={newJudge.bio}
@@ -922,10 +911,16 @@ function JudgesStep({ data, onNext, onPrev, isFirst, isLast }: StepProps) {
               />
             </div>
           </div>
-          <Button 
-            onClick={addJudge} 
+          <Button
+            onClick={addJudge}
             className="w-full"
-            disabled={!newJudge.name || !newJudge.title || !newJudge.company || !newJudge.bio || isUploading}
+            disabled={
+              !newJudge.name ||
+              !newJudge.title ||
+              !newJudge.company ||
+              !newJudge.bio ||
+              isUploading
+            }
           >
             <Plus size={16} className="mr-2" />
             {isUploading ? "Uploading..." : "Add Judge"}
@@ -1092,11 +1087,13 @@ export default function HackathonForm() {
   ];
 
   const handleNext = (data: Partial<HackathonFormData>) => {
-    setFormData({ ...formData, ...data });
+    const updatedFormData = { ...formData, ...data };
+    setFormData(updatedFormData);
+
     if (currentStep < steps.length) {
       setCurrentStep(currentStep + 1);
     } else {
-      handleSubmit();
+      handleSubmit(updatedFormData);
     }
   };
 
@@ -1106,7 +1103,7 @@ export default function HackathonForm() {
     }
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (finalFormData?: Partial<HackathonFormData>) => {
     if (!user) {
       toast.error("Please connect your wallet first");
       return;
@@ -1118,14 +1115,17 @@ export default function HackathonForm() {
 
     setIsSubmitting(true);
     setLoading(true);
+
+    const dataToSubmit = finalFormData || formData;
+
     try {
       // Prepare hackathon data
       const hackathonData = {
-        ...formData,
+        ...dataToSubmit,
         organizerId: user.id,
-        startDate: formData.startDate?.toISOString(),
-        endDate: formData.endDate?.toISOString(),
-        registrationDeadline: formData.registrationDeadline?.toISOString(),
+        startDate: dataToSubmit.startDate?.toISOString(),
+        endDate: dataToSubmit.endDate?.toISOString(),
+        registrationDeadline: dataToSubmit.registrationDeadline?.toISOString(),
       };
 
       // Call API to create hackathon
@@ -1156,7 +1156,8 @@ export default function HackathonForm() {
       // Redirect to hackathons page
       router.push("/hackathons");
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Failed to create hackathon";
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to create hackathon";
       toast.error(errorMessage);
     } finally {
       setLoading(false);

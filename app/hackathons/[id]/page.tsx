@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { useHackathonStore } from "@/stores/hackathon-store";
 import { format } from "date-fns";
+import type { Project } from "@/types/hackathon";
 
 export default function HackathonDetailPage() {
   const params = useParams();
