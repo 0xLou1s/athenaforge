@@ -6,7 +6,9 @@ export const useIPFS = () => {
     files,
     isLoading,
     error,
+    uploadProgress,
     uploadFile,
+    uploadFileWithSignedURL,
     uploadJSON,
     listFiles,
     getFileURL,
@@ -14,6 +16,7 @@ export const useIPFS = () => {
     setFiles,
     setLoading,
     setError,
+    setUploadProgress,
     clearError,
   } = useIPFSStore();
 
@@ -23,9 +26,11 @@ export const useIPFS = () => {
     files,
     isLoading,
     error,
+    uploadProgress,
     
     // Actions
     uploadFile,
+    uploadFileWithSignedURL,
     uploadJSON,
     listFiles,
     getFileURL,
@@ -33,6 +38,7 @@ export const useIPFS = () => {
     setFiles,
     setLoading,
     setError,
+    setUploadProgress,
     clearError,
   };
 };

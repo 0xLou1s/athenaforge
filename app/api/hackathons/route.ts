@@ -1,69 +1,91 @@
-import { NextRequest, NextResponse } from 'next/server';
-import envConfig from '@/config/env-config';
-import pinata from '@/lib/pinata';
-
-
+import { NextRequest, NextResponse } from "next/server";
+import { listIPFSFiles } from "@/lib/pinata-server";
+import envConfig from "@/config/env-config";
 
 export async function GET(request: NextRequest) {
   try {
-    // List all files in the group
-    const allFilesResponse = await pinata.files.public
-      .list()
-      .group(envConfig.NEXT_PUBLIC_PINATA_GROUP_ID)
-      .order('DESC');
+    const { searchParams } = new URL(request.url);
+    const status = searchParams.get("status");
+    const limit = parseInt(searchParams.get("limit") || "50");
 
-    // Filter hackathon files by name pattern
-    const hackathonFiles = allFilesResponse.files.filter(file => 
-      file.name && file.name.startsWith('hackathon-')
-    );
+    // Fetch hackathons from Pinata using metadata filter
 
-    // Fetch each hackathon file content using Pinata SDK
-    const hackathons: any[] = [];
-    
-    for (const file of hackathonFiles) {
-      if (file.cid !== 'pending') {
+    const hackathonFiles = await listIPFSFiles({
+      limit,
+      keyvalues: {
+        type: "hackathon",
+        ...(status && { status }),
+      },
+    });
+
+    // Get hackathon files only (no need for hackathon-final anymore)
+    const allFiles = hackathonFiles;
+
+    // Parse hackathon data from files and group by hackathonId
+    const hackathonMap = new Map();
+
+    await Promise.all(
+      allFiles.map(async (file) => {
         try {
-          // Use Pinata SDK to get file content
-          const hackathonData = await pinata.gateways.public.get(file.cid);
-          // Parse the data properly - it might be a string that needs JSON parsing
-          let dataObj: any = {};
-          
-          if (typeof hackathonData.data === 'string') {
+          // Fetch the actual hackathon data from IPFS
+          const response = await fetch(file.url);
+          const hackathonData = await response.json();
+
+          // Use hackathonId from keyvalues instead of metadata
+          const hackathonId =
+            file.keyvalues?.hackathonId ||
+            file.metadata?.hackathonId ||
+            file.cid;
+
+          // Use participants from hackathon data directly (new approach)
+          // Fall back to keyvalues for backward compatibility
+          let participants = hackathonData.participants;
+
+          // If participants is still a number (old format), try keyvalues
+          if (
+            typeof participants === "number" &&
+            file.keyvalues?.participants
+          ) {
             try {
-              dataObj = JSON.parse(hackathonData.data);
-            } catch (parseError) {
-              console.error(`Failed to parse JSON for ${file.cid}:`, parseError);
-              continue;
+              participants = JSON.parse(file.keyvalues.participants);
+            } catch (e) {
+              // Keep as number if parsing fails
+              participants = hackathonData.participants || 0;
             }
-          } else if (typeof hackathonData.data === 'object' && hackathonData.data !== null) {
-            dataObj = hackathonData.data;
           }
-          
-          if (dataObj && typeof dataObj === 'object' && dataObj.title) {
-            const hackathon = {
-              ...dataObj,
-              id: file.id,
-              ipfsHash: file.cid,
-              createdAt: file.created_at,
-            };
-            hackathons.push(hackathon);
-          } else {
-            console.warn(`Skipping file ${file.cid} - missing required fields:`, dataObj);
+
+          const hackathon = {
+            id: hackathonId, // Use consistent ID from keyvalues
+            ...hackathonData,
+            participants: participants, // Use participants from content or keyvalues
+            ipfsHash: file.cid,
+            createdAt: file.createdAt,
+            metadata: file.metadata,
+            keyvalues: file.keyvalues,
+            uploadedAt: file.keyvalues?.uploadedAt || file.metadata?.uploadedAt,
+          };
+
+          // Only keep the most recent file for each hackathonId
+          const existing = hackathonMap.get(hackathonId);
+          if (
+            !existing ||
+            new Date(file.createdAt) > new Date(existing.createdAt)
+          ) {
+            hackathonMap.set(hackathonId, hackathon);
           }
         } catch (error) {
-          console.error(`Error fetching hackathon ${file.cid}:`, error);
+          // Ignore parsing errors
         }
-      } else {
-        console.log(`Skipping pending file: ${file.name}`);
-      }
-    }
+      })
+    );
 
-    console.log(`Returning ${hackathons.length} valid hackathons`);
-    return NextResponse.json(hackathons);
+    // Convert map to array
+    const validHackathons = Array.from(hackathonMap.values());
+
+    return NextResponse.json(validHackathons);
   } catch (error) {
-    console.error('Fetch hackathons error:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch hackathons' },
+      { error: "Failed to fetch hackathons" },
       { status: 500 }
     );
   }

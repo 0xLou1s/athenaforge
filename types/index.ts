@@ -28,6 +28,7 @@ export type {
   Judge, 
   Track, 
   Project, 
+  Team,
   TeamMember, 
   Score 
 } from './hackathon';

@@ -93,7 +93,9 @@ export default function HackathonCard({
         <img
           src={
             hackathon.image
-              ? `https://${hackathon.image}`
+              ? hackathon.image.startsWith('http')
+                ? hackathon.image
+                : `https://${hackathon.image}`
               : "/placeholder-hackathon.jpg"
           }
           alt={hackathon.title || "hackathon"}
@@ -116,47 +118,36 @@ export default function HackathonCard({
           {hackathon.description || "No description available"}
         </CardDescription>
       </CardHeader>
-
       <CardContent className="space-y-4">
         {/* Date Range */}
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Calendar className="h-4 w-4" />
           <span>{formatDateRange(hackathon.startDate, hackathon.endDate)}</span>
         </div>
-
         {/* Participants */}
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Users className="h-4 w-4" />
           <span>
-            {hackathon.participants || 0} participants
-            {hackathon.maxParticipants && ` / ${hackathon.maxParticipants}`}
+            {Array.isArray(hackathon.participants) ? hackathon.participants.length : hackathon.participants || 0} participants
           </span>
         </div>
 
-        {/* Prizes */}
-        {(hackathon.prizes || []).length > 0 && (
+        {/* Tracks */}
+        {(hackathon.tracks || []).length > 0 && (
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Trophy className="h-4 w-4" />
             <span>
-              {(hackathon.prizes || []).length} prize
-              {(hackathon.prizes || []).length > 1 ? "s" : ""}
+              {(hackathon.tracks || []).length} track
+              {(hackathon.tracks || []).length > 1 ? "s" : ""}
             </span>
           </div>
         )}
 
-        {/* Tracks */}
-        {(hackathon.tracks || []).length > 0 && (
-          <div className="flex flex-wrap gap-1">
-            {(hackathon.tracks || []).slice(0, 2).map((track) => (
-              <Badge key={track.id} variant="outline" className="text-xs">
-                {track.name}
-              </Badge>
-            ))}
-            {(hackathon.tracks || []).length > 2 && (
-              <Badge variant="outline" className="text-xs">
-                +{(hackathon.tracks || []).length - 2} more
-              </Badge>
-            )}
+        {/* Registration Deadline */}
+        {hackathon.registrationDeadline && (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Calendar className="h-4 w-4" />
+            <span>Register by {formatDateRange(hackathon.registrationDeadline, hackathon.registrationDeadline)}</span>
           </div>
         )}
       </CardContent>

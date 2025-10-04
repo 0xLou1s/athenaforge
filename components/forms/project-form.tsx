@@ -24,8 +24,12 @@ import {
 } from "@/components/ui/select";
 import { Plus, X, Upload, Github, ExternalLink, Video } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  useHackathonStore,
+  type Project,
+  type TeamMember,
+} from "@/stores/hackathon-store";
 import { useIPFS } from "@/hooks/use-ipfs";
-import { useHackathonStore } from "@/stores/hackathon-store";
 import { usePrivy } from "@privy-io/react-auth";
 import { toast } from "sonner";
 import { Project, TeamMember } from "@/stores";
@@ -76,14 +80,15 @@ export default function ProjectForm({
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<Partial<ProjectFormData>>({});
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [newMember, setNewMember] = useState<Partial<TeamMember>>({
     name: "",
     role: "",
+    email: "",
   });
 
   const { setLoading, hackathons, fetchHackathonsFromIPFS } =
     useHackathonStore();
-  const { uploadJSON } = useIPFS();
   const { user } = usePrivy();
 
   const {
@@ -112,14 +117,33 @@ export default function ProjectForm({
         name: newMember.name,
         role: newMember.role,
         email: newMember.email,
+        joinedAt: new Date().toISOString(),
       };
-      setTeamMembers([...teamMembers, member]);
+      const updatedTeamMembers = [...teamMembers, member];
+      setTeamMembers(updatedTeamMembers);
+      setValue(
+        "team",
+        updatedTeamMembers.map((m) => ({
+          name: m.name,
+          role: m.role,
+          email: m.email || "",
+        }))
+      );
       setNewMember({ name: "", role: "", email: "" });
     }
   };
 
   const removeTeamMember = (id: string) => {
-    setTeamMembers(teamMembers.filter((member) => member.id !== id));
+    const updatedTeamMembers = teamMembers.filter((member) => member.id !== id);
+    setTeamMembers(updatedTeamMembers);
+    setValue(
+      "team",
+      updatedTeamMembers.map((m) => ({
+        name: m.name,
+        role: m.role,
+        email: m.email || "",
+      }))
+    );
   };
 
   const onSubmit = async (data: ProjectFormData) => {
@@ -134,38 +158,39 @@ export default function ProjectForm({
     }
 
     setLoading(true);
+    setIsSubmitting(true);
     try {
-      // Upload project data to IPFS
+      // Prepare project data
       const projectData = {
-        ...data,
-        team: teamMembers,
-        submittedAt: new Date().toISOString(),
-        submittedBy: user.id,
-      };
-
-      const uploadResult = await uploadJSON(projectData, {
-        name: `project-${Date.now()}`,
-        keyvalues: {
-          type: "project",
-          hackathon: data.hackathonId,
-          submitter: user.id,
-        },
-      });
-
-      // Create project object
-      const project: Project = {
-        id: Date.now().toString(),
         title: data.title,
         description: data.description,
-        team: teamMembers,
         hackathonId: data.hackathonId,
         trackId: data.trackId,
         repositoryUrl: data.repositoryUrl,
         demoUrl: data.demoUrl,
         videoUrl: data.videoUrl,
-        ipfsHash: uploadResult.cid,
-        submittedAt: new Date().toISOString(),
+        submittedBy: user.id,
+        team: {
+          members: teamMembers,
+        },
       };
+
+      // Submit project via API
+      const response = await fetch("/api/projects/create", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(projectData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to submit project");
+      }
+
+      const result = await response.json();
+      const project: Project = result.project;
 
       toast.success("Project submitted successfully!");
 
@@ -179,6 +204,7 @@ export default function ProjectForm({
       toast.error("Failed to submit project");
     } finally {
       setLoading(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -357,14 +383,14 @@ export default function ProjectForm({
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <Input
                   placeholder="Name"
-                  value={newMember.name}
+                  value={newMember.name || ""}
                   onChange={(e) =>
                     setNewMember({ ...newMember, name: e.target.value })
                   }
                 />
                 <Input
                   placeholder="Role"
-                  value={newMember.role}
+                  value={newMember.role || ""}
                   onChange={(e) =>
                     setNewMember({ ...newMember, role: e.target.value })
                   }
@@ -372,7 +398,7 @@ export default function ProjectForm({
                 <Input
                   placeholder="Email"
                   type="email"
-                  value={newMember.email}
+                  value={newMember.email || ""}
                   onChange={(e) =>
                     setNewMember({ ...newMember, email: e.target.value })
                   }
@@ -387,8 +413,19 @@ export default function ProjectForm({
         </Card>
 
         <div className="flex justify-end">
-          <Button type="submit" disabled={teamMembers.length === 0}>
-            Submit Project
+          <Button
+            type="submit"
+            disabled={teamMembers.length === 0 || isSubmitting}
+            className="min-w-[140px]"
+          >
+            {isSubmitting ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                Submitting...
+              </>
+            ) : (
+              "Submit Project"
+            )}
           </Button>
         </div>
       </form>
