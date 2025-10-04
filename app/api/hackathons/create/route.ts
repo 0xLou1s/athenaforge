@@ -20,7 +20,12 @@ export async function POST(request: NextRequest) {
       requirements,
       rules,
       organizerId,
+      _isUpdate,
+      _updateType,
+      _originalId,
     } = body;
+
+    const isUpdate = !!_isUpdate;
 
     // Validate required fields
     if (
@@ -64,10 +69,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create hackathon ID
-    const hackathonId = `hackathon-${Date.now()}-${Math.random()
-      .toString(36)
-      .substr(2, 9)}`;
+    // Create or use existing hackathon ID
+    const hackathonId =
+      isUpdate && _originalId
+        ? _originalId
+        : `hackathon-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
     // Determine status based on dates
     const now = new Date();
@@ -79,7 +85,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Create hackathon data structure
-    const hackathonData: Hackathon = {
+    const hackathonData: any = {
+      // Use any to allow flexible participants field
       id: hackathonId,
       title,
       description,
@@ -88,7 +95,7 @@ export async function POST(request: NextRequest) {
       endDate,
       registrationDeadline,
       status,
-      participants: 0,
+      participants: isUpdate ? body.participants || [] : 0, // If update, use actual participants array
       maxParticipants: maxParticipants || undefined,
       prizes: prizes.map((prize: any, index: number) => ({
         id: prize.id || `prize-${index}`,
@@ -125,20 +132,22 @@ export async function POST(request: NextRequest) {
       updatedAt: new Date().toISOString(),
     };
 
-    // Upload to IPFS
-    const uploadResult = await uploadJSONToIPFS(hackathonData, {
+    // Create metadata for IPFS upload
+    const metadata = {
       name: `hackathon-${hackathonId}`,
       keyvalues: {
-        type: "hackathon",
         hackathonId: hackathonId,
-        organizer: organizerId,
-        status: status,
-        createdAt: hackathonData.createdAt,
+        title: title,
+        organizerId: organizerId,
+        type: "hackathon",
+        isUpdate: isUpdate.toString(),
+        ...(_updateType && { updateType: _updateType }),
+        ...(_originalId && { originalId: _originalId }),
       },
-    });
+    };
 
-    // Update hackathon with IPFS hash
-    hackathonData.ipfsHash = uploadResult.cid;
+    // Upload to IPFS
+    const uploadResult = await uploadJSONToIPFS(hackathonData, metadata);
 
     // Return success response
     return NextResponse.json({

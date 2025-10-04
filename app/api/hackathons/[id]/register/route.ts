@@ -120,8 +120,8 @@ export async function POST(
     return NextResponse.json({
       success: true,
       message: "Successfully registered for hackathon",
-      hackathon: updatedHackathon,
-      fileId: updateResult.fileId,
+      hackathon: updateResult.hackathon || updatedHackathon,
+      cid: updateResult.cid,
     });
   } catch (error) {
     return NextResponse.json(
@@ -131,7 +131,7 @@ export async function POST(
   }
 }
 
-// Simple retry function for hackathon updates
+// New approach: Upload fresh hackathon JSON with updated participants
 async function updateHackathonWithRetry(
   hackathonId: string,
   participants: any[],
@@ -142,55 +142,70 @@ async function updateHackathonWithRetry(
 
   while (attempt < maxRetries) {
     try {
-      // Get fresh file data
+      // Get current hackathon data
       const hackathonsResponse = await fetch(
-        `${request.nextUrl.origin}/api/ipfs/list?type=hackathon`
+        `${request.nextUrl.origin}/api/hackathons`
       );
-      const filesData = await hackathonsResponse.json();
-      const hackathonFile = filesData.files.find(
-        (file: any) =>
-          file.keyvalues?.hackathonId === hackathonId &&
-          file.keyvalues?.type === "hackathon"
+      const hackathonsData = await hackathonsResponse.json();
+      const currentHackathon = hackathonsData.find(
+        (h: any) => h.id === hackathonId
       );
 
-      if (!hackathonFile) {
-        throw new Error("Hackathon file not found for update");
+      if (!currentHackathon) {
+        throw new Error("Hackathon not found for update");
       }
 
-      // Simple keyvalues update
-      const keyvaluesToUpdate = {
-        type: "hackathon",
-        hackathonId: hackathonId,
-        participantCount: String(participants.length),
-        participants: JSON.stringify(participants),
+      // Create updated hackathon object
+      const updatedHackathon = {
+        ...currentHackathon,
+        participants: participants,
         updatedAt: new Date().toISOString(),
       };
 
-      const updateResponse = await fetch(
-        `${request.nextUrl.origin}/api/ipfs/update-file`,
+      // Upload new hackathon JSON to IPFS
+      const uploadResponse = await fetch(
+        `${request.nextUrl.origin}/api/hackathons/create`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            fileId: hackathonFile.id,
-            keyvalues: keyvaluesToUpdate,
+            // Pass all existing hackathon data
+            title: updatedHackathon.title,
+            description: updatedHackathon.description,
+            image: updatedHackathon.image,
+            startDate: updatedHackathon.startDate,
+            endDate: updatedHackathon.endDate,
+            registrationDeadline: updatedHackathon.registrationDeadline,
+            maxParticipants: updatedHackathon.maxParticipants,
+            prizes: updatedHackathon.prizes,
+            judges: updatedHackathon.judges,
+            tracks: updatedHackathon.tracks,
+            requirements: updatedHackathon.requirements,
+            rules: updatedHackathon.rules,
+            organizerId: updatedHackathon.organizerId,
+            participants: participants, // Pass updated participants array
+            // This will be treated as an update
+            _isUpdate: true,
+            _updateType: "registration",
+            _originalId: hackathonId,
           }),
         }
       );
 
-      if (updateResponse.ok) {
-        const updateResult = await updateResponse.json();
+      if (uploadResponse.ok) {
+        const result = await uploadResponse.json();
+
         return {
           success: true,
-          fileId: hackathonFile.id,
-          ...updateResult,
+          cid: result.hackathon?.ipfsHash,
+          hackathon: result.hackathon,
         };
       }
 
-      const errorText = await updateResponse.text();
-      throw new Error(`Update failed: ${updateResponse.status} - ${errorText}`);
+      const errorText = await uploadResponse.text();
+      throw new Error(`Upload failed: ${uploadResponse.status} - ${errorText}`);
     } catch (error) {
       attempt++;
 
@@ -202,7 +217,8 @@ async function updateHackathonWithRetry(
       }
 
       // Wait before retry
-      await new Promise((resolve) => setTimeout(resolve, 1000 * attempt));
+      const waitTime = 1000 * attempt;
+      await new Promise((resolve) => setTimeout(resolve, waitTime));
     }
   }
 

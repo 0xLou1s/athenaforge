@@ -146,7 +146,7 @@ export async function updateIPFSFile(
   const maxRetries = 5; // Increased retries
   let attempt = 0;
   const baseDelay = 1000; // 1 second base delay
-  
+
   while (attempt < maxRetries) {
     try {
       // Exponential backoff with jitter
@@ -154,19 +154,19 @@ export async function updateIPFSFile(
         const exponentialDelay = Math.pow(2, attempt - 1) * baseDelay;
         const jitter = Math.random() * 0.3 * exponentialDelay; // 30% jitter
         const totalDelay = exponentialDelay + jitter;
-        await new Promise(resolve => setTimeout(resolve, totalDelay));
+        await new Promise((resolve) => setTimeout(resolve, totalDelay));
       }
 
       // Clean keyvalues - remove any undefined or null values and ensure all values are strings
       const cleanKeyvalues: Record<string, string> = {};
       if (metadata?.keyvalues) {
         Object.entries(metadata.keyvalues).forEach(([key, value]) => {
-          if (value !== undefined && value !== null && value !== '') {
+          if (value !== undefined && value !== null && value !== "") {
             cleanKeyvalues[key] = String(value);
           }
         });
       }
-      
+
       // Always add updatedAt with microsecond precision
       cleanKeyvalues.updatedAt = new Date().toISOString();
       cleanKeyvalues.updateAttempt = String(attempt + 1);
@@ -187,18 +187,20 @@ export async function updateIPFSFile(
       };
     } catch (error: any) {
       attempt++;
-      
+
       // Don't retry on certain errors
-      if (error.message?.includes('not found') || error.status === 404) {
+      if (error.message?.includes("not found") || error.status === 404) {
         throw new Error(`File not found: ${error.message}`);
       }
-      
-      if (error.message?.includes('unauthorized') || error.status === 401) {
+
+      if (error.message?.includes("unauthorized") || error.status === 401) {
         throw new Error(`Unauthorized: ${error.message}`);
       }
-      
+
       if (attempt >= maxRetries) {
-        throw new Error(`Failed to update IPFS file after ${maxRetries} attempts. Last error: ${error.message}`);
+        throw new Error(
+          `Failed to update IPFS file after ${maxRetries} attempts. Last error: ${error.message}`
+        );
       }
     }
   }

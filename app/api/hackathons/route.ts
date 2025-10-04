@@ -37,20 +37,27 @@ export async function GET(request: NextRequest) {
             file.metadata?.hackathonId ||
             file.cid;
 
-          // Parse participants from keyvalues if available
-          let participants = hackathonData.participants || [];
-          if (file.keyvalues?.participants) {
+          // Use participants from hackathon data directly (new approach)
+          // Fall back to keyvalues for backward compatibility
+          let participants = hackathonData.participants;
+
+          // If participants is still a number (old format), try keyvalues
+          if (
+            typeof participants === "number" &&
+            file.keyvalues?.participants
+          ) {
             try {
               participants = JSON.parse(file.keyvalues.participants);
             } catch (e) {
-              // Ignore parsing errors
+              // Keep as number if parsing fails
+              participants = hackathonData.participants || 0;
             }
           }
 
           const hackathon = {
             id: hackathonId, // Use consistent ID from keyvalues
             ...hackathonData,
-            participants: participants, // Use participants from keyvalues
+            participants: participants, // Use participants from content or keyvalues
             ipfsHash: file.cid,
             createdAt: file.createdAt,
             metadata: file.metadata,

@@ -26,7 +26,10 @@ export async function POST(request: NextRequest) {
       url: result.url,
     });
   } catch (error) {
-    console.error("Update file error:", error);
+    console.error("Update file error:", {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     return NextResponse.json(
       { error: "Failed to update file" },
       { status: 500 }
