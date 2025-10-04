@@ -41,6 +41,7 @@ import type {
 import { usePrivy } from "@privy-io/react-auth";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { Hackathon, Prize } from "@/stores";
 
 // Form schemas
 const prizeSchema = z.object({

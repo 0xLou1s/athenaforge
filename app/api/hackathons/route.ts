@@ -1,19 +1,19 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { listIPFSFiles } from '@/lib/pinata-server';
-import envConfig from '@/config/env-config';
+import { NextRequest, NextResponse } from "next/server";
+import { listIPFSFiles } from "@/lib/pinata-server";
+import envConfig from "@/config/env-config";
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const status = searchParams.get('status');
-    const limit = parseInt(searchParams.get('limit') || '50');
+    const status = searchParams.get("status");
+    const limit = parseInt(searchParams.get("limit") || "50");
 
     // Fetch hackathons from Pinata using metadata filter
-    
+
     const hackathonFiles = await listIPFSFiles({
       limit,
       keyvalues: {
-        type: 'hackathon',
+        type: "hackathon",
         ...(status && { status }),
       },
     });
@@ -32,7 +32,10 @@ export async function GET(request: NextRequest) {
           const hackathonData = await response.json();
 
           // Use hackathonId from keyvalues instead of metadata
-          const hackathonId = file.keyvalues?.hackathonId || file.metadata?.hackathonId || file.cid;
+          const hackathonId =
+            file.keyvalues?.hackathonId ||
+            file.metadata?.hackathonId ||
+            file.cid;
 
           // Parse participants from keyvalues if available
           let participants = hackathonData.participants || [];
@@ -57,7 +60,10 @@ export async function GET(request: NextRequest) {
 
           // Only keep the most recent file for each hackathonId
           const existing = hackathonMap.get(hackathonId);
-          if (!existing || new Date(file.createdAt) > new Date(existing.createdAt)) {
+          if (
+            !existing ||
+            new Date(file.createdAt) > new Date(existing.createdAt)
+          ) {
             hackathonMap.set(hackathonId, hackathon);
           }
         } catch (error) {
@@ -68,11 +74,11 @@ export async function GET(request: NextRequest) {
 
     // Convert map to array
     const validHackathons = Array.from(hackathonMap.values());
-    
+
     return NextResponse.json(validHackathons);
   } catch (error) {
     return NextResponse.json(
-      { error: 'Failed to fetch hackathons' },
+      { error: "Failed to fetch hackathons" },
       { status: 500 }
     );
   }

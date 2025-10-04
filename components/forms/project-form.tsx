@@ -29,8 +29,10 @@ import {
   type Project,
   type TeamMember,
 } from "@/stores/hackathon-store";
+import { useIPFS } from "@/hooks/use-ipfs";
 import { usePrivy } from "@privy-io/react-auth";
 import { toast } from "sonner";
+import { Project, TeamMember } from "@/stores";
 
 // Form schemas
 const teamMemberSchema = z.object({
