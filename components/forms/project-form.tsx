@@ -14,7 +14,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -22,14 +21,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, X, Upload, Github, ExternalLink, Video } from "lucide-react";
+import { Plus, X, Github, ExternalLink, Video } from "lucide-react";
 import { cn } from "@/lib/utils";
-import {
-  useHackathonStore,
-  type Project,
-  type TeamMember,
-} from "@/stores/hackathon-store";
-import { useIPFS } from "@/hooks/use-ipfs";
+import { useHackathonStore } from "@/stores/hackathon-store";
 import { usePrivy } from "@privy-io/react-auth";
 import { toast } from "sonner";
 import { Project, TeamMember } from "@/stores";

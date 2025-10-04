@@ -7,53 +7,54 @@ const __dirname = dirname(__filename);
 
 const compat = new FlatCompat({
   baseDirectory: __dirname,
+  recommendedConfig: {},
 });
 
 const eslintConfig = [
   {
-    ignores: ['node_modules/**', '.next/**', 'dist/**']
+    ignores: ["node_modules/**", ".next/**", "dist/**"],
   },
   {
-    files: ['**/*.{js,jsx,ts,tsx}'],
+    files: ["**/*.{js,jsx,ts,tsx}"],
     languageOptions: {
-      parser: '@typescript-eslint/parser',
+      parser: "@typescript-eslint/parser",
       parserOptions: {
-        ecmaVersion: 'latest',
-        sourceType: 'module',
+        ecmaVersion: "latest",
+        sourceType: "module",
         ecmaFeatures: {
-          jsx: true
-        }
-      }
+          jsx: true,
+        },
+      },
     },
     plugins: {
-      '@typescript-eslint': '@typescript-eslint/eslint-plugin',
-      'prettier': 'eslint-plugin-prettier'
+      "@typescript-eslint": "@typescript-eslint/eslint-plugin",
+      prettier: "eslint-plugin-prettier",
     },
     rules: {
-      '@typescript-eslint/no-explicit-any': 'off',
-      '@typescript-eslint/no-unused-vars': 'warn',
-      'prettier/prettier': [
-        'warn',
+      "@typescript-eslint/no-explicit-any": "off",
+      "@typescript-eslint/no-unused-vars": "warn",
+      "prettier/prettier": [
+        "warn",
         {
-          arrowParens: 'always',
+          arrowParens: "always",
           semi: false,
-          trailingComma: 'none',
+          trailingComma: "none",
           tabWidth: 2,
-          endOfLine: 'auto',
+          endOfLine: "auto",
           useTabs: false,
           singleQuote: true,
           printWidth: 120,
-          jsxSingleQuote: true
-        }
-      ]
-    }
+          jsxSingleQuote: true,
+        },
+      ],
+    },
   },
   ...compat.extends(
-    'eslint:recommended',
-    'plugin:@typescript-eslint/recommended',
-    'eslint-config-prettier',
-    'prettier'
-  )
+    "eslint:recommended",
+    "plugin:@typescript-eslint/recommended",
+    "eslint-config-prettier",
+    "prettier"
+  ),
 ];
 
 export default eslintConfig;
